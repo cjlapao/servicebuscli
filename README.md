@@ -1,5 +1,7 @@
 # Azure Service Bus Command Line Tool
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Build](https://github.com/cjlapao/servicebuscli-go/actions/workflows/build.yml/badge.svg)](https://github.com/cjlapao/servicebuscli-go/actions/workflows/build.yml) [![Release](https://github.com/cjlapao/servicebuscli-go/actions/workflows/release.yml/badge.svg)](https://github.com/cjlapao/servicebuscli-go/actions/workflows/release.yml) [![CodeQL](https://github.com/cjlapao/servicebuscli-go/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/cjlapao/servicebuscli-go/actions/workflows/codeql-analysis.yml)
+
 ## Index
 
 - [Azure Service Bus Command Line Tool](#azure-service-bus-command-line-tool)
