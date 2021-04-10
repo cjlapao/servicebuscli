@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/main.go",
+      "env": {
+        "SERVICEBUS_CONNECTION_STRING": "${input:azureServiceBusConnectionString}"
+      },
+      "args": [
+        "queue",
+        "test",
+        "--name=test.create3",
+        "--forward-to=queue:test.created",
+        "--forward-deadletter-to=topic:sample.timepassed",
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "azureServiceBusConnectionString",
+      "type": "promptString",
+      "description": "Azure Service Bus Connection String"
+    }
+  ]
+}
