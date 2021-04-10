@@ -1,0 +1,69 @@
+trigger:
+    - master
+
+pool:
+    vmImage: 'ubuntu-latest'
+
+stages:
+    - stage: test
+      displayName: 'Test Pipeline'
+      jobs:
+          - job: build
+            displayName: 'Build Tools'
+            steps:
+                - task: GoTool@0
+                  displayName: 'Installing Go'
+                  inputs:
+                      version: '1.15.6'
+                - task: Go@0
+                  displayName: 'Getting Go packages'
+                  inputs:
+                      command: 'get'
+                      arguments: '-d'
+                      workingDirectory: '$(Build.SourcesDirectory)'
+                - task: Go@0
+                  displayName: 'Set Linux Go Environment Vars'
+                  inputs:
+                      command: 'custom'
+                      customCommand: 'env'
+                      arguments: '-w GOOS=linux GOARCH=amd64'
+                      workingDirectory: '$(Build.SourcesDirectory)'
+                - task: Go@0
+                  displayName: 'Build Linux'
+                  inputs:
+                      command: 'build'
+                      workingDirectory: '$(Build.SourcesDirectory)'
+                - task: CopyFiles@2
+                  displayName: Copy Linux Build
+                  inputs:
+                      SourceFolder: '$(Build.SourcesDirectory)'
+                      Contents: 'servicebus'
+                      TargetFolder: '$(Build.ArtifactStagingDirectory)/servicebus/linux/amd64'
+                - task: PublishBuildArtifacts@1
+                  displayName: Create Linux Artifact
+                  inputs:
+                      PathtoPublish: '$(Build.ArtifactStagingDirectory)/servicebus/linux/amd64'
+                      artifactName: drop_linux
+                - task: Go@0
+                  displayName: 'Set Windows Go Environment Vars'
+                  inputs:
+                      command: 'custom'
+                      customCommand: 'env'
+                      arguments: '-w GOOS=windows GOARCH=amd64'
+                      workingDirectory: '$(Build.SourcesDirectory)'
+                - task: Go@0
+                  displayName: 'Build Windows'
+                  inputs:
+                      command: 'build'
+                      workingDirectory: '$(Build.SourcesDirectory)'
+                - task: CopyFiles@2
+                  displayName: Copy Windows Build
+                  inputs:
+                      SourceFolder: '$(Build.SourcesDirectory)'
+                      Contents: 'servicebus.exe'
+                      TargetFolder: '$(Build.ArtifactStagingDirectory)/servicebus/windows/amd64'
+                - task: PublishBuildArtifacts@1
+                  displayName: Create Windows Artifact
+                  inputs:
+                      PathtoPublish: '$(Build.ArtifactStagingDirectory)/servicebus/windows/amd64'
+                      artifactName: drop_windows
