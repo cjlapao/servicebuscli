@@ -11,9 +11,9 @@ import (
 
 	"github.com/cjlapao/common-go/helper"
 	"github.com/cjlapao/common-go/log"
-	"github.com/cjlapao/servicebus-go/help"
-	"github.com/cjlapao/servicebus-go/servicebus"
-	"github.com/cjlapao/servicebus-go/startup"
+	"github.com/cjlapao/servicebuscli-go/help"
+	"github.com/cjlapao/servicebuscli-go/servicebus"
+	"github.com/cjlapao/servicebuscli-go/startup"
 	"github.com/rs/xid"
 )
 
@@ -73,7 +73,7 @@ func main() {
 
 			var wg sync.WaitGroup
 			wg.Add(len(topics))
-			var topicSbClients []*servicebus.servicebus
+			var topicSbClients []*servicebus.ServiceBusCli
 			for _, topic := range topics {
 				go func(topicName string) {
 					sbcli := servicebus.NewCli(connStr)
@@ -359,7 +359,7 @@ func main() {
 
 			var wg sync.WaitGroup
 			wg.Add(len(queues))
-			var queueSbClients []*servicebus.servicebus
+			var queueSbClients []*servicebus.ServiceBusCli
 			for _, queue := range queues {
 				go func(queueName string) {
 					sbcli := servicebus.NewCli(connStr)
