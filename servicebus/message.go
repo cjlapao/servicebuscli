@@ -1,4 +1,4 @@
-package servicebuscli
+package servicebus
 
 // MessageEntity Entity
 type MessageEntity struct {
