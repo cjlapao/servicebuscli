@@ -49,6 +49,28 @@ func (s *ServiceBusCli) GetTopic(name string) *servicebus.Topic {
 	return topic
 }
 
+// GetTopicDetails Gets a topic details from the service bus
+func (s *ServiceBusCli) GetTopicDetails(name string) *servicebus.TopicEntity {
+	logger.Trace("Getting a topic " + name + " entity in service bus " + s.Namespace.Name)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	defer cancel()
+	if name == "" {
+		return nil
+	}
+
+	if s.TopicManager == nil {
+		s.GetTopicManager()
+	}
+
+	te, err := s.TopicManager.Get(ctx, name)
+	if err != nil {
+		logger.Error(err.Error())
+		return nil
+	}
+
+	return te
+}
+
 // ListTopics Lists all the topics in a service bus
 func (s *ServiceBusCli) ListTopics() ([]*servicebus.TopicEntity, error) {
 	logger.LogHighlight("Getting all topics in %v service bus", log.Info, s.Namespace.Name)
@@ -114,32 +136,32 @@ func (s *ServiceBusCli) SendTopicMessage(topicName string, message map[string]in
 }
 
 // CreateTopic Creates a topic in the service bus namespace
-func (s *ServiceBusCli) CreateTopic(topicName string) error {
+func (s *ServiceBusCli) CreateTopic(topicName string, opts ...servicebus.TopicManagementOption) (*servicebus.TopicEntity, error) {
 	var commonError error
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	if topicName == "" {
-		commonError = errors.New("Topic cannot be null")
+		commonError = errors.New("topic cannot be null")
 		logger.Error(commonError.Error())
-		return commonError
+		return nil, commonError
 	}
-	logger.LogHighlight("Creating topic %v in service bus %v", log.Info, topicName, s.Namespace.Name)
 
+	logger.LogHighlight("Creating topic %v in service bus %v", log.Info, topicName, s.Namespace.Name)
 	tm := s.GetTopicManager()
-	_, err := tm.Put(ctx, topicName)
+	topic, err := tm.Put(ctx, topicName, opts...)
 	if err != nil {
 		logger.Error(err.Error())
-		return err
+		return nil, err
 	}
 	logger.LogHighlight("Topic %v was created successfully in service bus %v", log.Info, topicName, s.Namespace.Name)
-	return nil
+	return topic, nil
 }
 
 // DeleteTopic Deletes a topic in the service bus namespace
 func (s *ServiceBusCli) DeleteTopic(topicName string) error {
 	var commonError error
 	if topicName == "" {
-		commonError = errors.New("Topic cannot be null")
+		commonError = errors.New("topic cannot be null")
 		logger.Error(commonError.Error())
 		return commonError
 	}
