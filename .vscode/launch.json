@@ -11,11 +11,7 @@
         "SERVICEBUS_CONNECTION_STRING": "${input:azureServiceBusConnectionString}"
       },
       "args": [
-        "queue",
-        "test",
-        "--name=test.create3",
-        "--forward-to=queue:test.created",
-        "--forward-deadletter-to=topic:sample.timepassed",
+        "api"
       ]
     }
   ],
