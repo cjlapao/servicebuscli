@@ -1,4 +1,4 @@
-package servicebuscli
+package servicebus
 
 import "github.com/rs/xid"
 

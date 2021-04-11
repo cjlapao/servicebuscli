@@ -12,7 +12,7 @@ import (
 	"github.com/cjlapao/common-go/helper"
 	"github.com/cjlapao/common-go/log"
 	"github.com/cjlapao/servicebuscli-go/help"
-	"github.com/cjlapao/servicebuscli-go/servicebuscli"
+	"github.com/cjlapao/servicebuscli-go/servicebus"
 	"github.com/cjlapao/servicebuscli-go/startup"
 	"github.com/rs/xid"
 )
@@ -73,10 +73,10 @@ func main() {
 
 			var wg sync.WaitGroup
 			wg.Add(len(topics))
-			var topicSbClients []*servicebuscli.ServiceBusCli
+			var topicSbClients []*servicebus.ServiceBusCli
 			for _, topic := range topics {
 				go func(topicName string) {
-					sbcli := servicebuscli.NewCli(connStr)
+					sbcli := servicebus.NewCli(connStr)
 					sbcli.UseWiretap = wiretap
 					sbcli.Peek = peek
 
@@ -98,7 +98,7 @@ func main() {
 			logger.Info("Bye!!!")
 			os.Exit(0)
 		case "list":
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			topics, err := sbcli.ListTopics()
 			if err != nil {
 				os.Exit(1)
@@ -123,7 +123,7 @@ func main() {
 				os.Exit(0)
 			}
 
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			subscriptions, err := sbcli.ListSubscriptions(topic)
 			if err != nil {
 				os.Exit(1)
@@ -172,7 +172,7 @@ func main() {
 				help.PrintTopicDeleteTopicCommandHelper()
 				os.Exit(0)
 			}
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			err := sbcli.DeleteTopic(topic)
 			if err != nil {
 				os.Exit(1)
@@ -188,7 +188,7 @@ func main() {
 				help.PrintTopicCreateTopicCommandHelper()
 				os.Exit(0)
 			}
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			err := sbcli.CreateTopic(topic)
 			if err != nil {
 				os.Exit(1)
@@ -213,9 +213,9 @@ func main() {
 				help.PrintTopicCreateSubscriptionCommandHelper()
 				os.Exit(0)
 			}
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 
-			subscription := servicebuscli.NewSubscription(topicName, subscriptionName)
+			subscription := servicebus.NewSubscription(topicName, subscriptionName)
 			subscription.MapMessageForwardFlag(forwardTo)
 			subscription.MapDeadLetterForwardFlag(forwardDeadLetterTo)
 			for _, rule := range rules {
@@ -242,7 +242,7 @@ func main() {
 				help.PrintTopicDeleteSubscriptionCommandHelper()
 				os.Exit(0)
 			}
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			err := sbcli.DeleteSubscription(topic, subscription)
 			if err != nil {
 				os.Exit(1)
@@ -327,7 +327,7 @@ func main() {
 				}
 			}
 
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			sbcli.SendTopicMessage(topic, message, label, properties)
 		default:
 			logger.LogHighlight("Invalid command argument %v, please choose a valid argument", log.Info, command)
@@ -359,10 +359,10 @@ func main() {
 
 			var wg sync.WaitGroup
 			wg.Add(len(queues))
-			var queueSbClients []*servicebuscli.ServiceBusCli
+			var queueSbClients []*servicebus.ServiceBusCli
 			for _, queue := range queues {
 				go func(queueName string) {
-					sbcli := servicebuscli.NewCli(connStr)
+					sbcli := servicebus.NewCli(connStr)
 					sbcli.Peek = peek
 					queueSbClients = append(queueSbClients, sbcli)
 					sbcli.SubscribeToQueue(queueName)
@@ -378,7 +378,7 @@ func main() {
 			logger.Info("Bye!!!")
 			os.Exit(0)
 		case "list":
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			queues, err := sbcli.ListQueues()
 			if err != nil {
 				fmt.Println(err)
@@ -425,7 +425,7 @@ func main() {
 				help.PrintQueueDeleteCommandHelper()
 				os.Exit(0)
 			}
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			err := sbcli.DeleteQueue(queue)
 			if err != nil {
 				fmt.Println(err)
@@ -445,9 +445,9 @@ func main() {
 				os.Exit(0)
 			}
 
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 
-			queue := servicebuscli.NewQueue(queueName)
+			queue := servicebus.NewQueue(queueName)
 			queue.MapMessageForwardFlag(forwardTo)
 			queue.MapDeadLetterForwardFlag(forwardDeadLetterTo)
 
@@ -535,7 +535,7 @@ func main() {
 				}
 			}
 
-			sbcli := servicebuscli.NewCli(connStr)
+			sbcli := servicebus.NewCli(connStr)
 			sbcli.SendQueueMessage(queue, message, label, properties)
 
 		default:
