@@ -1,8 +1,9 @@
-name: Bump version
+name: Generate Tag
+
 on:
   push:
-    branches:
-      - master
+    branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -21,7 +21,7 @@ var logger = log.Get()
 
 func main() {
 	logger.Command("************************************************************")
-	logger.Command("*      Ivanti Cloud Development Service Bus Tool v1.0      *")
+	logger.Command("*            Carlos Lapao Service Bus Tool v1.0            *")
 	logger.Command("*                                                          *")
 	logger.Command("*  Author: Carlos Lapao                                    *")
 	logger.Command("************************************************************")
