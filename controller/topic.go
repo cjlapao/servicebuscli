@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"time"
 
-	servicebus "github.com/Azure/azure-service-bus-go"
 	"github.com/cjlapao/servicebuscli-go/entities"
 	"github.com/gorilla/mux"
 )
@@ -152,7 +150,7 @@ func (c *Controller) UpsertTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topic := entities.TopicRequest{}
+	topic := entities.TopicRequestEntity{}
 	err = json.Unmarshal(reqBody, &topic)
 
 	// Body deserialization error
@@ -165,84 +163,28 @@ func (c *Controller) UpsertTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if topic.Name == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
-		json.NewEncoder(w).Encode(errorResponse)
-		return
-	}
+	isValid, validError := topic.IsValidate()
 
-	if r.Method == http.MethodPut {
-		eTopic := sbcli.GetTopic(topic.Name)
-		if eTopic == nil {
-			w.WriteHeader(http.StatusNotFound)
-			errorResponse.Code = http.StatusNotFound
-			errorResponse.Error = "Topic Not Found"
-			errorResponse.Message = "Topic name cannot be found"
-			json.NewEncoder(w).Encode(errorResponse)
+	if !isValid {
+		if validError != nil {
+			w.WriteHeader(int(validError.Code))
+			json.NewEncoder(w).Encode(validError)
 			return
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
 		}
 	}
 
-	var opts []servicebus.TopicManagementOption
-	opts = make([]servicebus.TopicManagementOption, 0)
-	if topic.Options != nil {
-		if topic.Options.AutoDeleteOnIdle != nil {
-			d, err := time.ParseDuration(*topic.Options.AutoDeleteOnIdle)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				errorResponse.Code = http.StatusBadRequest
-				errorResponse.Error = "Duration Parse Error"
-				errorResponse.Message = "There was an error processing the AutoDeleteOnIdle from string"
-				json.NewEncoder(w).Encode(errorResponse)
-				return
-			}
-			opts = append(opts, servicebus.TopicWithAutoDeleteOnIdle(&d))
-		}
-		if topic.Options.EnableBatchedOperation != nil {
-			opts = append(opts, servicebus.TopicWithBatchedOperations())
-		}
-		if topic.Options.EnableDuplicateDetection != nil {
-			d, err := time.ParseDuration(*topic.Options.AutoDeleteOnIdle)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				errorResponse.Code = http.StatusBadRequest
-				errorResponse.Error = "Duration Parse Error"
-				errorResponse.Message = "There was an error processing the EnableDuplicateDetection from string"
-				json.NewEncoder(w).Encode(errorResponse)
-				return
-			}
-			opts = append(opts, servicebus.TopicWithDuplicateDetection(&d))
-		}
-		if topic.Options.EnableExpress != nil {
-			opts = append(opts, servicebus.TopicWithExpress())
-		}
-		if topic.Options.MaxSizeInMegabytes != nil {
-			opts = append(opts, servicebus.TopicWithMaxSizeInMegabytes(*topic.Options.MaxSizeInMegabytes))
-		}
-		if topic.Options.DefaultMessageTimeToLive != nil {
-			d, err := time.ParseDuration(*topic.Options.AutoDeleteOnIdle)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				errorResponse.Code = http.StatusBadRequest
-				errorResponse.Error = "Duration Parse Error"
-				errorResponse.Message = "There was an error processing the DefaultMessageTimeToLive from string"
-				json.NewEncoder(w).Encode(errorResponse)
-				return
-			}
-			opts = append(opts, servicebus.TopicWithMessageTimeToLive(&d))
-		}
-		if topic.Options.SupportOrdering != nil {
-			opts = append(opts, servicebus.TopicWithOrdering())
-		}
-		if topic.Options.EnablePartitioning != nil {
-			opts = append(opts, servicebus.TopicWithPartitioning())
-		}
+	sbTopicOptions, errResp := topic.GetOptions()
+
+	if errResp != nil {
+		w.WriteHeader(int(errResp.Code))
+		json.NewEncoder(w).Encode(errResp)
+		return
+
 	}
 
-	sbTopic, err := sbcli.CreateTopic(topic.Name, opts...)
+	sbTopic, err := sbcli.CreateTopic(topic.Name, *sbTopicOptions...)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

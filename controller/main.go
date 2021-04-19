@@ -77,7 +77,8 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.HandleFunc("/topics/{name}", controller.DeleteTopic).Methods("DELETE")
 	controller.Router.HandleFunc("/topics/{name}/subscriptions", controller.GetTopicSubscriptions).Methods("GET")
 	controller.Router.HandleFunc("/topics", controller.UpsertTopic).Methods("POST")
-	controller.Router.HandleFunc("/topics", controller.UpsertTopic).Methods("PUT")
+
+	controller.Router.HandleFunc("/queues", controller.GetQueues).Methods("GET")
 
 	return controller
 }

@@ -7,23 +7,23 @@ import (
 )
 
 type SubscriptionEntity struct {
-	Name                                      string       `json:"name"`
-	ID                                        string       `json:"url"`
-	CountDetails                              CountDetails `json:"countDetails"`
-	LockDuration                              *string      `json:"lockDuration"`
-	RequiresSession                           *bool        `json:"requiresSession"`
-	DefaultMessageTimeToLive                  *string      `json:"defaultMessageTimeToLive"`
-	DeadLetteringOnMessageExpiration          *bool        `json:"deadLetteringOnMessageExpiration"`
-	DeadLetteringOnFilterEvaluationExceptions *bool        `json:"deadLetteringOnFilterEvaluationExceptions"`
-	MessageCount                              *int64       `json:"messageCount"`
-	MaxDeliveryCount                          *int32       `json:"maxDeliveryCount"`
-	EnableBatchedOperations                   *bool        `json:"enableBatchedOperations"`
-	Status                                    string       `json:"status"`
-	CreatedAt                                 time.Time    `json:"createdAt"`
-	UpdatedAt                                 time.Time    `json:"updatedAt"`
-	AccessedAt                                time.Time    `json:"accessedAt"`
-	ForwardTo                                 *string      `json:"forwardTo"`
-	ForwardDeadLetteredMessagesTo             *string      `json:"forwardDeadLetteredMessagesTo"`
+	Name                                      string             `json:"name"`
+	ID                                        string             `json:"url"`
+	CountDetails                              CountDetailsEntity `json:"countDetails"`
+	LockDuration                              *string            `json:"lockDuration"`
+	RequiresSession                           *bool              `json:"requiresSession"`
+	DefaultMessageTimeToLive                  *string            `json:"defaultMessageTimeToLive"`
+	DeadLetteringOnMessageExpiration          *bool              `json:"deadLetteringOnMessageExpiration"`
+	DeadLetteringOnFilterEvaluationExceptions *bool              `json:"deadLetteringOnFilterEvaluationExceptions"`
+	MessageCount                              *int64             `json:"messageCount"`
+	MaxDeliveryCount                          *int32             `json:"maxDeliveryCount"`
+	EnableBatchedOperations                   *bool              `json:"enableBatchedOperations"`
+	Status                                    string             `json:"status"`
+	CreatedAt                                 time.Time          `json:"createdAt"`
+	UpdatedAt                                 time.Time          `json:"updatedAt"`
+	AccessedAt                                time.Time          `json:"accessedAt"`
+	ForwardTo                                 *string            `json:"forwardTo"`
+	ForwardDeadLetteredMessagesTo             *string            `json:"forwardDeadLetteredMessagesTo"`
 }
 
 func (e *SubscriptionEntity) FromServiceBus(subscription *azservicebus.SubscriptionEntity) {
@@ -44,7 +44,7 @@ func (e *SubscriptionEntity) FromServiceBus(subscription *azservicebus.Subscript
 	e.Name = subscription.Name
 	e.ID = subscription.ID
 
-	e.CountDetails = CountDetails{
+	e.CountDetails = CountDetailsEntity{
 		ActiveMessageCount:             subscription.CountDetails.ActiveMessageCount,
 		DeadLetterMessageCount:         subscription.CountDetails.DeadLetterMessageCount,
 		ScheduledMessageCount:          subscription.CountDetails.ScheduledMessageCount,
