@@ -27,7 +27,7 @@ func (c *Controller) GetQueues(w http.ResponseWriter, r *http.Request) {
 		queues = append(queues, queue)
 	}
 
-	json.NewEncoder(w).Encode(azQueues)
+	json.NewEncoder(w).Encode(queues)
 }
 
 // UpsertQueue Update or Insert a Queue in the current namespace
