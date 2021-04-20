@@ -5,17 +5,18 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	servicebus "github.com/Azure/azure-service-bus-go"
 	"github.com/cjlapao/servicebuscli-go/entities"
 	"github.com/gorilla/mux"
 )
 
-// GetTopic Get Topic by name from the service bus
+// GetTopic Get Topic by name from the namespace
 func (c *Controller) GetTopic(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	key := vars["name"]
+	topicName := vars["name"]
 	errorResponse := entities.ApiErrorResponse{}
 
-	if key == "" {
+	if topicName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
 		errorResponse.Error = "Topic name is null"
@@ -24,7 +25,7 @@ func (c *Controller) GetTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sbTopic := sbcli.GetTopicDetails(key)
+	sbTopic := sbcli.GetTopicDetails(topicName)
 	if sbTopic == nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
@@ -40,13 +41,13 @@ func (c *Controller) GetTopic(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(topic)
 }
 
-// GetTopics Gets all topics in the namespace
+// DeleteTopic Deletes a topic in the namespace
 func (c *Controller) DeleteTopic(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	key := vars["name"]
+	topicName := vars["name"]
 	errorResponse := entities.ApiErrorResponse{}
 
-	if key == "" {
+	if topicName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
 		errorResponse.Error = "Topic name is null"
@@ -55,7 +56,7 @@ func (c *Controller) DeleteTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sbTopic := sbcli.GetTopicDetails(key)
+	sbTopic := sbcli.GetTopicDetails(topicName)
 	if sbTopic == nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
@@ -65,7 +66,7 @@ func (c *Controller) DeleteTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := sbcli.DeleteTopic(key)
+	err := sbcli.DeleteTopic(topicName)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
@@ -78,13 +79,13 @@ func (c *Controller) DeleteTopic(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// GetArticle Gets an article by it's id from the database
+// GetTopicSubscriptions Gets All the subscriptions in a topic
 func (c *Controller) GetTopicSubscriptions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	key := vars["name"]
+	topicName := vars["name"]
 	errorResponse := entities.ApiErrorResponse{}
 
-	if key == "" {
+	if topicName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
 		errorResponse.Error = "Topic name is null"
@@ -93,7 +94,7 @@ func (c *Controller) GetTopicSubscriptions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	azTopicSubscriptions, err := sbcli.ListSubscriptions(key)
+	azTopicSubscriptions, err := sbcli.ListSubscriptions(topicName)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
@@ -136,7 +137,7 @@ func (c *Controller) GetTopics(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(topics)
 }
 
-func (c *Controller) UpsertTopic(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) CreateTopic(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	errorResponse := entities.ApiErrorResponse{}
 
@@ -164,7 +165,7 @@ func (c *Controller) UpsertTopic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	isValid, validError := topic.IsValidate()
-
+	var sbTopic *servicebus.TopicEntity
 	if !isValid {
 		if validError != nil {
 			w.WriteHeader(int(validError.Code))
@@ -184,7 +185,18 @@ func (c *Controller) UpsertTopic(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	sbTopic, err := sbcli.CreateTopic(topic.Name, *sbTopicOptions...)
+	topicExists := sbcli.GetTopic(topic.Name)
+
+	if topicExists != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		found := entities.ApiSuccessResponse{
+			Message: "The topic " + topic.Name + " already exists, ignoring",
+		}
+		json.NewEncoder(w).Encode(found)
+		return
+	}
+
+	sbTopic, err = sbcli.CreateTopic(topic.Name, *sbTopicOptions...)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -199,4 +211,74 @@ func (c *Controller) UpsertTopic(w http.ResponseWriter, r *http.Request) {
 	topicE.FromServiceBus(sbTopic)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(topicE)
+}
+
+func (c *Controller) SendTopicMessage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	topicName := vars["name"]
+	reqBody, err := ioutil.ReadAll(r.Body)
+	errorResponse := entities.ApiErrorResponse{}
+
+	// Topic Name cannot be nil
+	if topicName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Topic name is null"
+		errorResponse.Message = "Topic name cannot be null"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	// Body cannot be nil error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Empty Body"
+		errorResponse.Message = "The body of the request is null or empty"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	message := entities.ServiceBusMessage{}
+	err = json.Unmarshal(reqBody, &message)
+
+	// Body deserialization error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Failed Body Deserialization"
+		errorResponse.Message = "There was an error deserializing the body of the request"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	sbMessage, err := message.ToServiceBus()
+
+	// Convert to ServiceBus Message error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Failed Conversion"
+		errorResponse.Message = "There was an error converting the request to a service bus message"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	err = sbcli.SendTopicServiceBusMessage(topicName, sbMessage)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Error Sending Topic Message"
+		errorResponse.Message = "There was an error sending message to topic " + topicName
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	response := entities.ApiSuccessResponse{
+		Message: "Message " + message.Label + " was sent successfully to " + topicName + " topic",
+		Data:    message.Data,
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(response)
 }

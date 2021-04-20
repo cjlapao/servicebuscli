@@ -135,6 +135,39 @@ func (s *ServiceBusCli) SendTopicMessage(topicName string, message map[string]in
 	return nil
 }
 
+// SendTopicMessage sends a message to a specific topic
+func (s *ServiceBusCli) SendTopicServiceBusMessage(topicName string, sbMessage *servicebus.Message) error {
+	var commonError error
+	logger.LogHighlight("Sending a service bus topic message to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
+	if topicName == "" {
+		commonError = errors.New("Topic cannot be null")
+		logger.Error(commonError.Error())
+		return commonError
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	topic := s.GetTopic(topicName)
+	if topic == nil {
+		commonError = errors.New("Could not find topic " + topicName + " in service bus " + s.Namespace.Name)
+		logger.LogHighlight("Could not find topic %v in service bus %v", log.Error, topicName, s.Namespace.Name)
+		return commonError
+	}
+
+	err := topic.Send(ctx, sbMessage)
+
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	logger.LogHighlight("Service bus topic message was sent successfully to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
+	logger.Info("Message:")
+	logger.Info(string(sbMessage.Data))
+	return nil
+}
+
 // CreateTopic Creates a topic in the service bus namespace
 func (s *ServiceBusCli) CreateTopic(topicName string, opts ...servicebus.TopicManagementOption) (*servicebus.TopicEntity, error) {
 	var commonError error

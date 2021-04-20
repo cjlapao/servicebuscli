@@ -80,7 +80,7 @@ func (tr *TopicRequestEntity) GetOptions() (*[]servicebus.TopicManagementOption,
 			opts = append(opts, servicebus.TopicWithBatchedOperations())
 		}
 		if tr.Options.EnableDuplicateDetection != nil {
-			d, err := time.ParseDuration(*tr.Options.AutoDeleteOnIdle)
+			d, err := time.ParseDuration(*tr.Options.EnableDuplicateDetection)
 			if err != nil {
 				errorResponse.Code = http.StatusBadRequest
 				errorResponse.Error = "Duration Parse Error"
@@ -96,7 +96,7 @@ func (tr *TopicRequestEntity) GetOptions() (*[]servicebus.TopicManagementOption,
 			opts = append(opts, servicebus.TopicWithMaxSizeInMegabytes(*tr.Options.MaxSizeInMegabytes))
 		}
 		if tr.Options.DefaultMessageTimeToLive != nil {
-			d, err := time.ParseDuration(*tr.Options.AutoDeleteOnIdle)
+			d, err := time.ParseDuration(*tr.Options.DefaultMessageTimeToLive)
 			if err != nil {
 				errorResponse.Code = http.StatusBadRequest
 				errorResponse.Error = "Duration Parse Error"
@@ -132,7 +132,7 @@ func (tr *TopicRequestEntity) IsValidate() (bool, *ApiErrorResponse) {
 type TopicRequestOptions struct {
 	AutoDeleteOnIdle         *string `json:"autoDeleteOnIdle,omitempty"`
 	EnableBatchedOperation   *bool   `json:"enableBatchedOperation,omitempty"`
-	EnableDuplicateDetection *bool   `json:"enableDuplicateDetection,omitempty"`
+	EnableDuplicateDetection *string `json:"enableDuplicateDetection,omitempty"`
 	EnableExpress            *bool   `json:"enableExpress,omitempty"`
 	MaxSizeInMegabytes       *int    `json:"maxSizeInMegabytes,omitempty"`
 	DefaultMessageTimeToLive *string `json:"defaultMessageTimeToLive,omitempty"`

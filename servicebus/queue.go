@@ -288,6 +288,39 @@ func (s *ServiceBusCli) SendQueueMessage(queueName string, message map[string]in
 	return nil
 }
 
+// SendQueueServiceBusMessage Sends a Service Bus Message to a Queue
+func (s *ServiceBusCli) SendQueueServiceBusMessage(queueName string, sbMessage *servicebus.Message) error {
+	var commonError error
+	logger.LogHighlight("Sending a service bus queue message to %v queue in service bus %v", log.Info, queueName, s.Namespace.Name)
+	if queueName == "" {
+		commonError = errors.New("Queue cannot be null")
+		logger.Error(commonError.Error())
+		return commonError
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	queue := s.GetQueue(queueName)
+	if queue == nil {
+		commonError = errors.New("Could not find queue " + queueName + " in service bus " + s.Namespace.Name)
+		logger.LogHighlight("Could not find queue %v in service bus %v", log.Error, queueName, s.Namespace.Name)
+		return commonError
+	}
+
+	err := queue.Send(ctx, sbMessage)
+
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	logger.LogHighlight("Service bus queue message was sent successfully to %v queue in service bus %v", log.Info, queueName, s.Namespace.Name)
+	logger.Info("Message:")
+	logger.Info(string(sbMessage.Data))
+	return nil
+}
+
 // SubscribeToQueue Subscribes to a queue and listen to the messages
 func (s *ServiceBusCli) SubscribeToQueue(queueName string) error {
 	var commonError error

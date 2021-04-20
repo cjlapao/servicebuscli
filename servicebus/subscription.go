@@ -435,3 +435,31 @@ func (s *ServiceBusCli) CloseTopicSubscription() error {
 	s.CloseTopicListener <- false
 	return nil
 }
+
+func (s *ServiceBusCli) GetSubscriptionMessage(topicName string, subscriptionName string) error {
+	var commonError error
+	logger.LogHighlight("Subscribing to %v on topic %v in service bus %v", log.Info, subscriptionName, topicName, s.Namespace.Name)
+	if topicName == "" {
+		commonError = errors.New("Topic " + topicName + " cannot be null")
+		logger.LogHighlight("Topic %v cannot be null", log.Error, topicName)
+		return commonError
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	topic := s.GetTopic(topicName)
+	if topic == nil {
+		commonError = errors.New("Could not find topic " + topicName + " in service bus" + s.Namespace.Name)
+		logger.LogHighlight("Could not find topic %v in service bus %v", log.Error, topicName, s.Namespace.Name)
+		return commonError
+	}
+	s.ActiveTopic = topic
+	sm := topic.NewSubscriptionManager()
+	subscription, commonError := sm.Get(ctx, subscriptionName)
+	if commonError != nil {
+		return commonError
+	}
+
+	receiver, err := subscription.NewReceiver(ctx)
+}

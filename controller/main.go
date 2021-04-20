@@ -73,12 +73,14 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.Use(ServiceBusConnectionMiddleware)
 	controller.Router.Use(commonMiddleware)
 	controller.Router.HandleFunc("/topics", controller.GetTopics).Methods("GET")
+	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("POST")
 	controller.Router.HandleFunc("/topics/{name}", controller.GetTopic).Methods("GET")
 	controller.Router.HandleFunc("/topics/{name}", controller.DeleteTopic).Methods("DELETE")
 	controller.Router.HandleFunc("/topics/{name}/subscriptions", controller.GetTopicSubscriptions).Methods("GET")
-	controller.Router.HandleFunc("/topics", controller.UpsertTopic).Methods("POST")
+	controller.Router.HandleFunc("/topics/{name}/send", controller.SendTopicMessage).Methods("PUT")
 
 	controller.Router.HandleFunc("/queues", controller.GetQueues).Methods("GET")
+	controller.Router.HandleFunc("/queues/{name}/send", controller.SendQueueMessage).Methods("PUT")
 
 	return controller
 }
