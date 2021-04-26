@@ -10,10 +10,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// GetTopics Gets all topics in the namespace
+func (c *Controller) GetTopics(w http.ResponseWriter, r *http.Request) {
+	errorResponse := entities.ApiErrorResponse{}
+	azTopics, err := sbcli.ListTopics()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Topic name is null"
+		errorResponse.Message = "Topic name cannot be null"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	topics := make([]entities.TopicEntity, 0)
+	for _, aztopic := range azTopics {
+		topic := entities.TopicEntity{}
+		topic.FromServiceBus(aztopic)
+		topics = append(topics, topic)
+	}
+
+	json.NewEncoder(w).Encode(topics)
+}
+
 // GetTopic Get Topic by name from the namespace
 func (c *Controller) GetTopic(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	topicName := vars["name"]
+	topicName := vars["topicName"]
 	errorResponse := entities.ApiErrorResponse{}
 
 	if topicName == "" {
@@ -44,7 +67,7 @@ func (c *Controller) GetTopic(w http.ResponseWriter, r *http.Request) {
 // DeleteTopic Deletes a topic in the namespace
 func (c *Controller) DeleteTopic(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	topicName := vars["name"]
+	topicName := vars["topicName"]
 	errorResponse := entities.ApiErrorResponse{}
 
 	if topicName == "" {
@@ -77,64 +100,6 @@ func (c *Controller) DeleteTopic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// GetTopicSubscriptions Gets All the subscriptions in a topic
-func (c *Controller) GetTopicSubscriptions(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	topicName := vars["name"]
-	errorResponse := entities.ApiErrorResponse{}
-
-	if topicName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
-		json.NewEncoder(w).Encode(errorResponse)
-		return
-	}
-
-	azTopicSubscriptions, err := sbcli.ListSubscriptions(topicName)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "Topic not found"
-		errorResponse.Message = "Topic was not found"
-		json.NewEncoder(w).Encode(errorResponse)
-		return
-	}
-
-	subscriptions := make([]entities.SubscriptionEntity, 0)
-	for _, azsubscription := range azTopicSubscriptions {
-		result := entities.SubscriptionEntity{}
-		result.FromServiceBus(azsubscription)
-		subscriptions = append(subscriptions, result)
-	}
-
-	json.NewEncoder(w).Encode(subscriptions)
-}
-
-// GetTopics Gets all topics in the namespace
-func (c *Controller) GetTopics(w http.ResponseWriter, r *http.Request) {
-	errorResponse := entities.ApiErrorResponse{}
-	azTopics, err := sbcli.ListTopics()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
-		json.NewEncoder(w).Encode(errorResponse)
-		return
-	}
-
-	topics := make([]entities.TopicEntity, 0)
-	for _, aztopic := range azTopics {
-		topic := entities.TopicEntity{}
-		topic.FromServiceBus(aztopic)
-		topics = append(topics, topic)
-	}
-
-	json.NewEncoder(w).Encode(topics)
 }
 
 func (c *Controller) CreateTopic(w http.ResponseWriter, r *http.Request) {

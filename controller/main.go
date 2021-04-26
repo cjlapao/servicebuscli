@@ -15,7 +15,6 @@ import (
 )
 
 var connStr = os.Getenv("SERVICEBUS_CONNECTION_STRING")
-var router mux.Router
 var logger = cjlog.Get()
 var ver = version.Get()
 var sbcli = servicebus.NewCli(connStr)
@@ -72,15 +71,28 @@ func NewAPIController(router *mux.Router) Controller {
 
 	controller.Router.Use(ServiceBusConnectionMiddleware)
 	controller.Router.Use(commonMiddleware)
+	// Topics Controllers
 	controller.Router.HandleFunc("/topics", controller.GetTopics).Methods("GET")
 	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("POST")
-	controller.Router.HandleFunc("/topics/{name}", controller.GetTopic).Methods("GET")
-	controller.Router.HandleFunc("/topics/{name}", controller.DeleteTopic).Methods("DELETE")
-	controller.Router.HandleFunc("/topics/{name}/subscriptions", controller.GetTopicSubscriptions).Methods("GET")
-	controller.Router.HandleFunc("/topics/{name}/send", controller.SendTopicMessage).Methods("PUT")
-
+	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("PUT")
+	controller.Router.HandleFunc("/topics/{topicName}", controller.GetTopic).Methods("GET")
+	controller.Router.HandleFunc("/topics/{topicName}", controller.DeleteTopic).Methods("DELETE")
+	controller.Router.HandleFunc("/topics/{topicName}/send", controller.SendTopicMessage).Methods("PUT")
+	// Subscriptions Controllers
+	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.GetTopicSubscriptions).Methods("GET")
+	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.CreateTopicSubscription).Methods("POST")
+	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.CreateTopicSubscription).Methods("PUT")
+	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}", controller.GetTopicSubscription).Methods("GET")
+	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}", controller.DeleteTopicSubscription).Methods("DELETE")
+	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/deadletters", controller.GetSubscriptionDeadLetterMessages).Methods("GET")
+	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/messages", controller.GetSubscriptionMessages).Methods("GET")
+	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules", controller.GetSubscriptionRules).Methods("GET")
+	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules", controller.CreateSubscriptionRule).Methods("POST")
+	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules/{ruleName}", controller.GetSubscriptionRule).Methods("GET")
+	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules/{ruleName}", controller.DeleteSubscriptionRule).Methods("DELETE")
+	// Queues Controllers
 	controller.Router.HandleFunc("/queues", controller.GetQueues).Methods("GET")
-	controller.Router.HandleFunc("/queues/{name}/send", controller.SendQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc("/queues/{queueName}/send", controller.SendQueueMessage).Methods("PUT")
 
 	return controller
 }

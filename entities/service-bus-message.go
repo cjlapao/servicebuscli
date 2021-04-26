@@ -39,3 +39,26 @@ func (m *ServiceBusMessage) ToServiceBus() (*servicebus.Message, error) {
 
 	return &sbMessage, nil
 }
+
+func (m *ServiceBusMessage) FromServiceBus(msg *servicebus.Message) error {
+	m.Data = map[string]interface{}{}
+	err := json.Unmarshal(msg.Data, &m.Data)
+	if err != nil {
+		return err
+	}
+	m.UserProperties = msg.UserProperties
+
+	if msg.Label != "" {
+		m.Label = msg.Label
+	}
+
+	if msg.ContentType != "" {
+		m.ContentType = msg.ContentType
+	}
+
+	if msg.CorrelationID != "" {
+		m.CorrelationID = msg.CorrelationID
+	}
+
+	return nil
+}

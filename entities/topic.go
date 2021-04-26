@@ -138,5 +138,4 @@ type TopicRequestOptions struct {
 	DefaultMessageTimeToLive *string `json:"defaultMessageTimeToLive,omitempty"`
 	SupportOrdering          *bool   `json:"supportOrdering,omitempty"`
 	EnablePartitioning       *bool   `json:"enablePartitioning,omitempty"`
-	RequireSession           *bool   `json:"requireSession,omitempty"`
 }

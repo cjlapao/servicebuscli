@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	servicebus "github.com/Azure/azure-service-bus-go"
@@ -68,6 +69,65 @@ func (q *QueueEntity) FromServiceBus(queue *servicebus.QueueEntity) {
 	q.ForwardDeadLetteredMessagesTo = queue.ForwardDeadLetteredMessagesTo
 	q.CountDetails = CountDetailsEntity{}
 	q.CountDetails.FromServiceBus(queue.CountDetails)
+}
+
+// QueueEntity structure
+type QueueRequestEntity struct {
+	Name                     string
+	LockDuration             time.Duration
+	AutoDeleteOnIdle         time.Duration
+	DefaultMessageTimeToLive time.Duration
+	MaxDeliveryCount         int32
+	Forward                  *ForwardEntity
+	ForwardDeadLetter        *ForwardEntity
+}
+
+// NewQueue Creates a Queue entity
+func NewQueueRequest(name string) *QueueRequestEntity {
+	result := QueueRequestEntity{
+		MaxDeliveryCount: 10,
+	}
+
+	result.Name = name
+	result.Forward.In = ForwardToQueue
+
+	return &result
+}
+
+// MapMessageForwardFlag Maps a forward flag string into it's sub components
+func (s *QueueRequestEntity) MapMessageForwardFlag(value string) {
+	if value != "" {
+		forwardMapped := strings.Split(value, ":")
+		if len(forwardMapped) == 1 {
+			s.Forward.To = forwardMapped[0]
+		} else if len(forwardMapped) == 2 {
+			s.Forward.To = forwardMapped[1]
+			switch strings.ToLower(forwardMapped[0]) {
+			case "topic":
+				s.Forward.In = ForwardToTopic
+			case "queue":
+				s.Forward.In = ForwardToQueue
+			}
+		}
+	}
+}
+
+// MapDeadLetterForwardFlag Maps a forward dead letter flag string into it's sub components
+func (s *QueueRequestEntity) MapDeadLetterForwardFlag(value string) {
+	if value != "" {
+		forwardMapped := strings.Split(value, ":")
+		if len(forwardMapped) == 1 {
+			s.ForwardDeadLetter.To = forwardMapped[0]
+		} else if len(forwardMapped) == 2 {
+			s.ForwardDeadLetter.To = forwardMapped[1]
+			switch strings.ToLower(forwardMapped[0]) {
+			case "topic":
+				s.ForwardDeadLetter.In = ForwardToTopic
+			case "queue":
+				s.ForwardDeadLetter.In = ForwardToQueue
+			}
+		}
+	}
 }
 
 // type QueueRequestEntity struct {

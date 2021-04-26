@@ -13,6 +13,7 @@ import (
 	"github.com/cjlapao/common-go/log"
 	"github.com/cjlapao/common-go/version"
 	"github.com/cjlapao/servicebuscli-go/controller"
+	"github.com/cjlapao/servicebuscli-go/entities"
 	"github.com/cjlapao/servicebuscli-go/help"
 	"github.com/cjlapao/servicebuscli-go/servicebus"
 	"github.com/cjlapao/servicebuscli-go/startup"
@@ -221,13 +222,13 @@ func main() {
 			}
 			sbcli := servicebus.NewCli(connStr)
 
-			subscription := servicebus.NewSubscription(topicName, subscriptionName)
+			subscription := entities.NewSubscriptionRequest(topicName, subscriptionName)
 			subscription.MapMessageForwardFlag(forwardTo)
 			subscription.MapDeadLetterForwardFlag(forwardDeadLetterTo)
 			for _, rule := range rules {
 				subscription.MapRuleFlag(rule)
 			}
-			err := sbcli.CreateSubscription(subscription)
+			err := sbcli.CreateSubscription(*subscription, false)
 			if err != nil {
 				os.Exit(1)
 			}
@@ -453,11 +454,11 @@ func main() {
 
 			sbcli := servicebus.NewCli(connStr)
 
-			queue := servicebus.NewQueue(queueName)
+			queue := entities.NewQueueRequest(queueName)
 			queue.MapMessageForwardFlag(forwardTo)
 			queue.MapDeadLetterForwardFlag(forwardDeadLetterTo)
 
-			err := sbcli.CreateQueue(queue)
+			err := sbcli.CreateQueue(*queue)
 			if err != nil {
 				os.Exit(1)
 			}

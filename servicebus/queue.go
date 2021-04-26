@@ -6,71 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	servicebus "github.com/Azure/azure-service-bus-go"
 	"github.com/cjlapao/common-go/log"
+	"github.com/cjlapao/servicebuscli-go/entities"
 )
-
-// QueueEntity structure
-type QueueEntity struct {
-	Name                     string
-	LockDuration             time.Duration
-	AutoDeleteOnIdle         time.Duration
-	DefaultMessageTimeToLive time.Duration
-	MaxDeliveryCount         int32
-	Forward                  ForwardEntity
-	ForwardDeadLetter        ForwardEntity
-}
-
-// NewQueue Creates a Queue entity
-func NewQueue(name string) QueueEntity {
-	result := QueueEntity{
-		MaxDeliveryCount: 10,
-	}
-
-	result.Name = name
-	result.Forward.In = ForwardToQueue
-
-	return result
-}
-
-// MapMessageForwardFlag Maps a forward flag string into it's sub components
-func (s *QueueEntity) MapMessageForwardFlag(value string) {
-	if value != "" {
-		forwardMapped := strings.Split(value, ":")
-		if len(forwardMapped) == 1 {
-			s.Forward.To = forwardMapped[0]
-		} else if len(forwardMapped) == 2 {
-			s.Forward.To = forwardMapped[1]
-			switch strings.ToLower(forwardMapped[0]) {
-			case "topic":
-				s.Forward.In = ForwardToTopic
-			case "queue":
-				s.Forward.In = ForwardToQueue
-			}
-		}
-	}
-}
-
-// MapDeadLetterForwardFlag Maps a forward dead letter flag string into it's sub components
-func (s *QueueEntity) MapDeadLetterForwardFlag(value string) {
-	if value != "" {
-		forwardMapped := strings.Split(value, ":")
-		if len(forwardMapped) == 1 {
-			s.ForwardDeadLetter.To = forwardMapped[0]
-		} else if len(forwardMapped) == 2 {
-			s.ForwardDeadLetter.To = forwardMapped[1]
-			switch strings.ToLower(forwardMapped[0]) {
-			case "topic":
-				s.ForwardDeadLetter.In = ForwardToTopic
-			case "queue":
-				s.ForwardDeadLetter.In = ForwardToQueue
-			}
-		}
-	}
-}
 
 // GetQueueManager creates a Service Bus Queue manager
 func (s *ServiceBusCli) GetQueueManager() *servicebus.QueueManager {
@@ -126,7 +67,7 @@ func (s *ServiceBusCli) ListQueues() ([]*servicebus.QueueEntity, error) {
 }
 
 // CreateQueue Creates a queue in the service bus namespace
-func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
+func (s *ServiceBusCli) CreateQueue(queue entities.QueueRequestEntity) error {
 	var commonError error
 	opts := make([]servicebus.QueueManagementOption, 0)
 
@@ -166,7 +107,7 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 	// Generating the forward rule, checking if the target exists or not
 	if queue.Forward.To != "" {
 		switch queue.Forward.In {
-		case ForwardToTopic:
+		case entities.ForwardToTopic:
 			tm := s.GetTopicManager()
 			target, err := tm.Get(ctx, queue.Forward.To)
 			if err != nil || target == nil {
@@ -174,7 +115,7 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 				return err
 			}
 			opts = append(opts, servicebus.QueueEntityWithAutoForward(target))
-		case ForwardToQueue:
+		case entities.ForwardToQueue:
 			qm := s.GetQueueManager()
 			target, err := qm.Get(ctx, queue.Forward.To)
 			if err != nil || target == nil {
@@ -188,7 +129,7 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 	// Generating the Dead Letter forwarding rule, checking if the target exist or not
 	if queue.ForwardDeadLetter.To != "" {
 		switch queue.ForwardDeadLetter.In {
-		case ForwardToTopic:
+		case entities.ForwardToTopic:
 			tm := s.GetTopicManager()
 			target, err := tm.Get(ctx, queue.ForwardDeadLetter.To)
 			if err != nil || target == nil {
@@ -196,7 +137,7 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 				return err
 			}
 			opts = append(opts, servicebus.QueueEntityWithAutoForward(target))
-		case ForwardToQueue:
+		case entities.ForwardToQueue:
 			qm := s.GetQueueManager()
 			target, err := qm.Get(ctx, queue.ForwardDeadLetter.To)
 			if err != nil || target == nil {
