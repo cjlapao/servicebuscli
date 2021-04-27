@@ -607,8 +607,20 @@ func (c *Controller) CreateSubscriptionRule(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	rule, err := sbcli.GetSubscriptionRule(topicName, subscriptionName, ruleRequest.Name)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		errorResponse.Code = http.StatusNotFound
+		errorResponse.Error = "Failed to CREATE Subscription Rule" + ruleRequest.Name
+		errorResponse.Message = err.Error()
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	response := entities.RuleResponseEntity{}
+	response.FromServiceBus(rule)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(ruleRequest)
+	json.NewEncoder(w).Encode(response)
 }
 
 // GetSubscriptionMessages Gets messages from a topic subscription
