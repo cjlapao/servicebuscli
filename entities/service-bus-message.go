@@ -6,7 +6,7 @@ import (
 	servicebus "github.com/Azure/azure-service-bus-go"
 )
 
-type ServiceBusMessage struct {
+type ServiceBusMessageRequest struct {
 	Label          string                 `json:"label"`
 	CorrelationID  string                 `json:"correlationId"`
 	ContentType    string                 `json:"contentType"`
@@ -14,7 +14,7 @@ type ServiceBusMessage struct {
 	UserProperties map[string]interface{} `json:"userProperties"`
 }
 
-func (m *ServiceBusMessage) ToServiceBus() (*servicebus.Message, error) {
+func (m *ServiceBusMessageRequest) ToServiceBus() (*servicebus.Message, error) {
 	messageData, err := json.MarshalIndent(m.Data, "", "  ")
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (m *ServiceBusMessage) ToServiceBus() (*servicebus.Message, error) {
 	return &sbMessage, nil
 }
 
-func (m *ServiceBusMessage) FromServiceBus(msg *servicebus.Message) error {
+func (m *ServiceBusMessageRequest) FromServiceBus(msg *servicebus.Message) error {
 	m.Data = map[string]interface{}{}
 	err := json.Unmarshal(msg.Data, &m.Data)
 	if err != nil {

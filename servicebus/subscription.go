@@ -77,6 +77,10 @@ func (s *ServiceBusCli) CreateSubscription(subscription entities.SubscriptionReq
 
 	opts = append(opts, *entityOpts...)
 
+	// if subscription.MaxDeliveryCount > 0 && subscription.MaxDeliveryCount != 10 {
+	// 	opts = append(opts, servicebus.Sub(int32(queue.MaxDeliveryCount)))
+	// }
+
 	// Generating the forward rule, checking if the target exists or not
 	if subscription.Forward != nil && subscription.Forward.To != "" {
 		switch subscription.Forward.In {

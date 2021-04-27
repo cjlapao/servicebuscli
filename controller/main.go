@@ -1,20 +1,23 @@
 package controller
 
 import (
-	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+
+	"net/http"
 
 	cjlog "github.com/cjlapao/common-go/log"
 	"github.com/cjlapao/common-go/version"
 	"github.com/cjlapao/servicebuscli-go/servicebus"
-
-	"net/http"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/parser"
 
 	"github.com/gorilla/mux"
 )
 
 var connStr = os.Getenv("SERVICEBUS_CONNECTION_STRING")
+var port = os.Getenv("SERVICEBUS_CLI_HTTP_PORT")
 var logger = cjlog.Get()
 var ver = version.Get()
 var sbcli = servicebus.NewCli(connStr)
@@ -30,22 +33,45 @@ func RestApiModuleProcessor() {
 }
 
 func handleRequests() {
+	if port == "" {
+		port = "10000"
+	}
+
+	logger.Info("Starting Api Server on port " + port)
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(commonMiddleware)
 	router.HandleFunc("/", homePage)
 	_ = NewAPIController(router)
 	logger.Success("Finished Init")
-	log.Fatal(http.ListenAndServe(":10000", router))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Welcome to the Homepage!")
-	fmt.Println("endpoint Hit: homepage")
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.FencedCode
+	parser := parser.NewWithExtensions(extensions)
+	md, err := ioutil.ReadFile("README.md")
+	if err != nil {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	// unsanitizedHtml := markdown.ToHTML(md, parser, nil)
+	htmlHeader := []byte("<html><head><link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/themes/prism.min.css\"</head>><body><script src=\"https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/prism.min.js\"></script>")
+	htmlBody := markdown.ToHTML(md, parser, nil)
+	htmlFooter := []byte("</body></html>")
+	unsanitizedHtml := make([]byte, 0)
+	unsanitizedHtml = append(unsanitizedHtml, htmlHeader...)
+	unsanitizedHtml = append(unsanitizedHtml, htmlBody...)
+	unsanitizedHtml = append(unsanitizedHtml, htmlFooter...)
+
+	// html := bluemonday.UGCPolicy().SanitizeBytes(unsanitizedHtml)
+	w.Write(unsanitizedHtml)
 }
 
 func commonMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
+		if r.URL.Path != "/" {
+			w.Header().Add("Content-Type", "application/json")
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -80,8 +106,8 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.HandleFunc("/topics/{topicName}/send", controller.SendTopicMessage).Methods("PUT")
 	// Subscriptions Controllers
 	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.GetTopicSubscriptions).Methods("GET")
-	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.CreateTopicSubscription).Methods("POST")
-	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.CreateTopicSubscription).Methods("PUT")
+	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.UpsertTopicSubscription).Methods("POST")
+	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.UpsertTopicSubscription).Methods("PUT")
 	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}", controller.GetTopicSubscription).Methods("GET")
 	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}", controller.DeleteTopicSubscription).Methods("DELETE")
 	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/deadletters", controller.GetSubscriptionDeadLetterMessages).Methods("GET")
@@ -92,7 +118,12 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules/{ruleName}", controller.DeleteSubscriptionRule).Methods("DELETE")
 	// Queues Controllers
 	controller.Router.HandleFunc("/queues", controller.GetQueues).Methods("GET")
+	controller.Router.HandleFunc("/queues", controller.UpsertQueue).Methods("POST")
+	controller.Router.HandleFunc("/queues/{queueName}", controller.GetQueue).Methods("GET")
+	controller.Router.HandleFunc("/queues/{queueName}", controller.DeleteQueue).Methods("DELETE")
 	controller.Router.HandleFunc("/queues/{queueName}/send", controller.SendQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc("/queues/{queueName}/deadletters", controller.GetQueueDeadLetterMessages).Methods("GET")
+	controller.Router.HandleFunc("/queues/{queueName}/messages", controller.GetQueueMessages).Methods("GET")
 
 	return controller
 }

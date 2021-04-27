@@ -9,7 +9,7 @@ import (
 	servicebus "github.com/Azure/azure-service-bus-go"
 )
 
-type SubscriptionEntity struct {
+type SubscriptionResponseEntity struct {
 	Name                                      string             `json:"name"`
 	ID                                        string             `json:"url"`
 	CountDetails                              CountDetailsEntity `json:"countDetails"`
@@ -29,7 +29,7 @@ type SubscriptionEntity struct {
 	ForwardDeadLetteredMessagesTo             *string            `json:"forwardDeadLetteredMessagesTo"`
 }
 
-func (e *SubscriptionEntity) FromServiceBus(subscription *azservicebus.SubscriptionEntity) {
+func (e *SubscriptionResponseEntity) FromServiceBus(subscription *azservicebus.SubscriptionEntity) {
 	e.LockDuration = subscription.LockDuration
 	e.RequiresSession = subscription.RequiresSession
 	e.DefaultMessageTimeToLive = subscription.DefaultMessageTimeToLive
@@ -198,16 +198,13 @@ func (tr *SubscriptionRequestEntity) GetOptions() (*[]servicebus.SubscriptionMan
 			}
 			opts = append(opts, servicebus.SubscriptionWithAutoDeleteOnIdle(&d))
 		}
-		if tr.Options.EnableBatchedOperation != nil {
+		if tr.Options.EnableBatchedOperation != nil && *tr.Options.EnableBatchedOperation {
 			opts = append(opts, servicebus.SubscriptionWithBatchedOperations())
 		}
-		if tr.Options.SubscriptionWithDeadLetteringOnMessageExpiration != nil {
+		if tr.Options.DeadLetteringOnMessageExpiration != nil && *tr.Options.DeadLetteringOnMessageExpiration {
 			opts = append(opts, servicebus.SubscriptionWithDeadLetteringOnMessageExpiration())
 		}
-		if tr.Options.SubscriptionWithDeadLetteringOnMessageExpiration != nil {
-			opts = append(opts, servicebus.SubscriptionWithDeadLetteringOnMessageExpiration())
-		}
-		if tr.Options.RequireSession != nil {
+		if tr.Options.RequireSession != nil && *tr.Options.RequireSession {
 			opts = append(opts, servicebus.SubscriptionWithRequiredSessions())
 		}
 		if tr.Options.DefaultMessageTimeToLive != nil {
@@ -256,10 +253,10 @@ func (tr *SubscriptionRequestEntity) ValidateSubscriptionRequest() (bool, *ApiEr
 }
 
 type SubscriptionRequestOptions struct {
-	AutoDeleteOnIdle                                 *string `json:"autoDeleteOnIdle,omitempty"`
-	DefaultMessageTimeToLive                         *string `json:"defaultMessageTimeToLive,omitempty"`
-	LockDuration                                     *string `json:"lockDuration,omitempty"`
-	EnableBatchedOperation                           *bool   `json:"enableBatchedOperation,omitempty"`
-	SubscriptionWithDeadLetteringOnMessageExpiration *bool   `json:"subscriptionWithDeadLetteringOnMessageExpiration,omitempty"`
-	RequireSession                                   *bool   `json:"requireSession,omitempty"`
+	AutoDeleteOnIdle                 *string `json:"autoDeleteOnIdle,omitempty"`
+	DefaultMessageTimeToLive         *string `json:"defaultMessageTimeToLive,omitempty"`
+	LockDuration                     *string `json:"lockDuration,omitempty"`
+	EnableBatchedOperation           *bool   `json:"enableBatchedOperation,omitempty"`
+	DeadLetteringOnMessageExpiration *bool   `json:"deadLetteringOnMessageExpiration,omitempty"`
+	RequireSession                   *bool   `json:"requireSession,omitempty"`
 }

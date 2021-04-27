@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -9,8 +10,8 @@ import (
 	"github.com/cjlapao/servicebuscli-go/duration"
 )
 
-// QueueEntity
-type QueueEntity struct {
+// QueueResponseEntity
+type QueueResponseEntity struct {
 	Name                                string             `json:"name"`
 	ID                                  string             `json:"id"`
 	CountDetails                        CountDetailsEntity `json:"countDetails"`
@@ -37,7 +38,7 @@ type QueueEntity struct {
 	ForwardDeadLetteredMessagesTo       *string            `json:"forwardDeadLetteredMessagesTo"`
 }
 
-func (q *QueueEntity) FromServiceBus(queue *servicebus.QueueEntity) {
+func (q *QueueResponseEntity) FromServiceBus(queue *servicebus.QueueEntity) {
 	if queue == nil {
 		return
 	}
@@ -73,13 +74,11 @@ func (q *QueueEntity) FromServiceBus(queue *servicebus.QueueEntity) {
 
 // QueueEntity structure
 type QueueRequestEntity struct {
-	Name                     string
-	LockDuration             time.Duration
-	AutoDeleteOnIdle         time.Duration
-	DefaultMessageTimeToLive time.Duration
-	MaxDeliveryCount         int32
-	Forward                  *ForwardEntity
-	ForwardDeadLetter        *ForwardEntity
+	Name              string               `json:"name"`
+	MaxDeliveryCount  int32                `json:"maxDeliveryCount"`
+	Forward           *ForwardEntity       `json:"forward"`
+	ForwardDeadLetter *ForwardEntity       `json:"forwardDeadLetter"`
+	Options           *QueueRequestOptions `json:"options,omitempty"`
 }
 
 // NewQueue Creates a Queue entity
@@ -90,6 +89,7 @@ func NewQueueRequest(name string) *QueueRequestEntity {
 
 	result.Name = name
 	result.Forward.In = ForwardToQueue
+	result.ForwardDeadLetter.In = ForwardToQueue
 
 	return &result
 }
@@ -130,92 +130,96 @@ func (s *QueueRequestEntity) MapDeadLetterForwardFlag(value string) {
 	}
 }
 
-// type QueueRequestEntity struct {
-// 	Name    string               `json:"name"`
-// 	Options *QueueRequestOptions `json:"options,omitempty"`
-// }
+func (qr *QueueRequestEntity) GetOptions() (*[]servicebus.QueueManagementOption, *ApiErrorResponse) {
+	var opts []servicebus.QueueManagementOption
+	opts = make([]servicebus.QueueManagementOption, 0)
+	var errorResponse ApiErrorResponse
 
-// func (qr *QueueRequestEntity) GetOptions() (*[]servicebus.QueueManagementOption, *ApiErrorResponse) {
-// 	var opts []servicebus.QueueManagementOption
-// 	opts = make([]servicebus.QueueManagementOption, 0)
-// 	var errorResponse ApiErrorResponse
+	if qr.Options != nil {
+		if qr.Options.AutoDeleteOnIdle != nil {
+			d, err := time.ParseDuration(*qr.Options.AutoDeleteOnIdle)
+			if err != nil {
+				errorResponse.Code = http.StatusBadRequest
+				errorResponse.Error = "Duration Parse Error"
+				errorResponse.Message = "There was an error processing the AutoDeleteOnIdle from string"
+				return nil, &errorResponse
+			}
+			opts = append(opts, servicebus.QueueEntityWithAutoDeleteOnIdle(&d))
+		}
+		if qr.Options.DeadLetteringOnMessageExpiration != nil && *qr.Options.DeadLetteringOnMessageExpiration {
+			opts = append(opts, servicebus.QueueEntityWithDeadLetteringOnMessageExpiration())
+		}
+		if qr.Options.EnableDuplicateDetection != nil {
+			d, err := time.ParseDuration(*qr.Options.AutoDeleteOnIdle)
+			if err != nil {
+				errorResponse.Code = http.StatusBadRequest
+				errorResponse.Error = "Duration Parse Error"
+				errorResponse.Message = "There was an error processing the EnableDuplicateDetection from string"
+				return nil, &errorResponse
+			}
+			opts = append(opts, servicebus.QueueEntityWithDuplicateDetection(&d))
+		}
+		if qr.Options.LockDuration != nil {
+			d, err := time.ParseDuration(*qr.Options.AutoDeleteOnIdle)
+			if err != nil {
+				errorResponse.Code = http.StatusBadRequest
+				errorResponse.Error = "Duration Parse Error"
+				errorResponse.Message = "There was an error processing the LockDuration from string"
+				return nil, &errorResponse
+			}
+			opts = append(opts, servicebus.QueueEntityWithLockDuration(&d))
+		}
+		if qr.Options.MaxSizeInMegabytes != nil {
+			opts = append(opts, servicebus.QueueEntityWithMaxSizeInMegabytes(*qr.Options.MaxSizeInMegabytes))
+		}
+		if qr.Options.DefaultMessageTimeToLive != nil {
+			d, err := time.ParseDuration(*qr.Options.DefaultMessageTimeToLive)
+			if err != nil {
+				errorResponse.Code = http.StatusBadRequest
+				errorResponse.Error = "Duration Parse Error"
+				errorResponse.Message = "There was an error processing the DefaultMessageTimeToLive from string"
+				return nil, &errorResponse
+			}
+			opts = append(opts, servicebus.QueueEntityWithMessageTimeToLive(&d))
+		}
+		if qr.Options.RequireSession != nil && *qr.Options.RequireSession {
+			opts = append(opts, servicebus.QueueEntityWithRequiredSessions())
+		}
+		if qr.Options.EnablePartitioning != nil && *qr.Options.EnablePartitioning {
+			opts = append(opts, servicebus.QueueEntityWithPartitioning())
+		}
+	}
 
-// 	if qr.Options != nil {
-// 		if qr.Options.ForwardTo != nil {
-// 			opts = append(opts, servicebus.qu)
-// 		}
-// 		if qr.Options.AutoDeleteOnIdle != nil {
-// 			d, err := time.ParseDuration(*qr.Options.AutoDeleteOnIdle)
-// 			if err != nil {
-// 				errorResponse.Code = http.StatusBadRequest
-// 				errorResponse.Error = "Duration Parse Error"
-// 				errorResponse.Message = "There was an error processing the AutoDeleteOnIdle from string"
-// 				return nil, &errorResponse
-// 			}
-// 			opts = append(opts, servicebus.TopicWithAutoDeleteOnIdle(&d))
-// 		}
-// 		if qr.Options.EnableBatchedOperation != nil {
-// 			opts = append(opts, servicebus.TopicWithBatchedOperations())
-// 		}
-// 		if qr.Options.EnableDuplicateDetection != nil {
-// 			d, err := time.ParseDuration(*qr.Options.AutoDeleteOnIdle)
-// 			if err != nil {
-// 				errorResponse.Code = http.StatusBadRequest
-// 				errorResponse.Error = "Duration Parse Error"
-// 				errorResponse.Message = "There was an error processing the EnableDuplicateDetection from string"
-// 				return nil, &errorResponse
-// 			}
-// 			opts = append(opts, servicebus.TopicWithDuplicateDetection(&d))
-// 		}
-// 		if qr.Options.EnableExpress != nil {
-// 			opts = append(opts, servicebus.TopicWithExpress())
-// 		}
-// 		if qr.Options.MaxSizeInMegabytes != nil {
-// 			opts = append(opts, servicebus.TopicWithMaxSizeInMegabytes(*qr.Options.MaxSizeInMegabytes))
-// 		}
-// 		if qr.Options.DefaultMessageTimeToLive != nil {
-// 			d, err := time.ParseDuration(*qr.Options.AutoDeleteOnIdle)
-// 			if err != nil {
-// 				errorResponse.Code = http.StatusBadRequest
-// 				errorResponse.Error = "Duration Parse Error"
-// 				errorResponse.Message = "There was an error processing the DefaultMessageTimeToLive from string"
-// 				return nil, &errorResponse
-// 			}
-// 			opts = append(opts, servicebus.TopicWithMessageTimeToLive(&d))
-// 		}
-// 		if qr.Options.SupportOrdering != nil {
-// 			opts = append(opts, servicebus.TopicWithOrdering())
-// 		}
-// 		if qr.Options.EnablePartitioning != nil {
-// 			opts = append(opts, servicebus.TopicWithPartitioning())
-// 		}
-// 	}
+	return &opts, nil
+}
 
-// 	return &opts, nil
-// }
+func (qr *QueueRequestEntity) IsValid() (bool, *ApiErrorResponse) {
+	var errorResponse ApiErrorResponse
 
-// func (tr *QueueRequestEntity) IsValidate() (bool, *ApiErrorResponse) {
-// 	var errorResponse ApiErrorResponse
+	if qr.Name == "" {
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Queue name is null"
+		errorResponse.Message = "Queue name cannot be null"
+		return false, &errorResponse
+	}
 
-// 	if tr.Name == "" {
-// 		errorResponse.Code = http.StatusBadRequest
-// 		errorResponse.Error = "Topic name is null"
-// 		errorResponse.Message = "Topic name cannot be null"
-// 		return false, &errorResponse
-// 	}
+	_, errResp := qr.GetOptions()
 
-// 	return true, nil
-// }
+	if errResp != nil {
+		return false, errResp
+	}
 
-// type QueueRequestOptions struct {
-// 	ForwardTo                     *string `json:"forwardTo"`
-// 	ForwardDeadLetteredMessagesTo *string `json:"forwardDeadLetteredMessagesTo"`
-// 	AutoDeleteOnIdle              *string `json:"autoDeleteOnIdle,omitempty"`
-// 	EnableBatchedOperation        *bool   `json:"enableBatchedOperation,omitempty"`
-// 	EnableDuplicateDetection      *bool   `json:"enableDuplicateDetection,omitempty"`
-// 	EnableExpress                 *bool   `json:"enableExpress,omitempty"`
-// 	MaxSizeInMegabytes            *int    `json:"maxSizeInMegabytes,omitempty"`
-// 	DefaultMessageTimeToLive      *string `json:"defaultMessageTimeToLive,omitempty"`
-// 	SupportOrdering               *bool   `json:"supportOrdering,omitempty"`
-// 	EnablePartitioning            *bool   `json:"enablePartitioning,omitempty"`
-// }
+	return true, nil
+}
+
+type QueueRequestOptions struct {
+	AutoDeleteOnIdle                 *string `json:"autoDeleteOnIdle,omitempty"`
+	EnableDuplicateDetection         *string `json:"enableDuplicateDetection,omitempty"`
+	MaxSizeInMegabytes               *int    `json:"maxSizeInMegabytes,omitempty"`
+	DefaultMessageTimeToLive         *string `json:"defaultMessageTimeToLive,omitempty"`
+	LockDuration                     *string `json:"lockDuration,omitempty"`
+	SupportOrdering                  *bool   `json:"supportOrdering,omitempty"`
+	EnablePartitioning               *bool   `json:"enablePartitioning,omitempty"`
+	RequireSession                   *bool   `json:"requireSession,omitempty"`
+	DeadLetteringOnMessageExpiration *bool   `json:"deadLetteringOnMessageExpiration,omitempty"`
+}

@@ -23,9 +23,9 @@ func (c *Controller) GetTopics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topics := make([]entities.TopicEntity, 0)
+	topics := make([]entities.TopicResponseEntity, 0)
 	for _, aztopic := range azTopics {
-		topic := entities.TopicEntity{}
+		topic := entities.TopicResponseEntity{}
 		topic.FromServiceBus(aztopic)
 		topics = append(topics, topic)
 	}
@@ -58,7 +58,7 @@ func (c *Controller) GetTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topic := entities.TopicEntity{}
+	topic := entities.TopicResponseEntity{}
 	topic.FromServiceBus(sbTopic)
 
 	json.NewEncoder(w).Encode(topic)
@@ -172,7 +172,7 @@ func (c *Controller) CreateTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topicE := entities.TopicEntity{}
+	topicE := entities.TopicResponseEntity{}
 	topicE.FromServiceBus(sbTopic)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(topicE)
@@ -204,7 +204,7 @@ func (c *Controller) SendTopicMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := entities.ServiceBusMessage{}
+	message := entities.ServiceBusMessageRequest{}
 	err = json.Unmarshal(reqBody, &message)
 
 	// Body deserialization error

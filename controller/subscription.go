@@ -45,9 +45,9 @@ func (c *Controller) GetTopicSubscriptions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	subscriptions := make([]entities.SubscriptionEntity, 0)
+	subscriptions := make([]entities.SubscriptionResponseEntity, 0)
 	for _, azSubscription := range azTopicSubscriptions {
-		result := entities.SubscriptionEntity{}
+		result := entities.SubscriptionResponseEntity{}
 		result.FromServiceBus(azSubscription)
 		subscriptions = append(subscriptions, result)
 	}
@@ -102,13 +102,13 @@ func (c *Controller) GetTopicSubscription(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	apiSubscription := entities.SubscriptionEntity{}
+	apiSubscription := entities.SubscriptionResponseEntity{}
 	apiSubscription.FromServiceBus(azSubscription)
 	json.NewEncoder(w).Encode(apiSubscription)
 }
 
-// CreateTopicSubscription Creates a subscription in a topic
-func (c *Controller) CreateTopicSubscription(w http.ResponseWriter, r *http.Request) {
+// UpsertTopicSubscription Creates a subscription in a topic
+func (c *Controller) UpsertTopicSubscription(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -197,7 +197,7 @@ func (c *Controller) CreateTopicSubscription(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	subscriptionE := entities.SubscriptionEntity{}
+	subscriptionE := entities.SubscriptionResponseEntity{}
 	createdSubscription, err := sbcli.GetSubscription(bodySubscription.TopicName, bodySubscription.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -267,10 +267,10 @@ func (c *Controller) DeleteTopicSubscription(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	apiSubscription := entities.SubscriptionEntity{}
-	apiSubscription.FromServiceBus(sbSubscription)
+	response := entities.SubscriptionResponseEntity{}
+	response.FromServiceBus(sbSubscription)
 	w.WriteHeader(http.StatusAccepted)
-	json.NewEncoder(w).Encode(apiSubscription)
+	json.NewEncoder(w).Encode(response)
 }
 
 // GetSubscriptionMessages Gets messages from a topic subscription
@@ -333,9 +333,9 @@ func (c *Controller) GetSubscriptionMessages(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusNoContent)
 		return
 	} else {
-		response := make([]entities.ServiceBusMessage, 0)
+		response := make([]entities.ServiceBusMessageRequest, 0)
 		for _, msg := range result {
-			entityMsg := entities.ServiceBusMessage{}
+			entityMsg := entities.ServiceBusMessageRequest{}
 			entityMsg.FromServiceBus(&msg)
 			response = append(response, entityMsg)
 		}
@@ -405,9 +405,9 @@ func (c *Controller) GetSubscriptionDeadLetterMessages(w http.ResponseWriter, r 
 		w.WriteHeader(http.StatusNoContent)
 		return
 	} else {
-		response := make([]entities.ServiceBusMessage, 0)
+		response := make([]entities.ServiceBusMessageRequest, 0)
 		for _, msg := range result {
-			entityMsg := entities.ServiceBusMessage{}
+			entityMsg := entities.ServiceBusMessageRequest{}
 			entityMsg.FromServiceBus(&msg)
 			response = append(response, entityMsg)
 		}

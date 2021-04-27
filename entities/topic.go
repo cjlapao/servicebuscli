@@ -7,7 +7,7 @@ import (
 	servicebus "github.com/Azure/azure-service-bus-go"
 )
 
-type TopicEntity struct {
+type TopicResponseEntity struct {
 	Name                                string             `json:"name"`
 	ID                                  string             `json:"id"`
 	CountDetails                        CountDetailsEntity `json:"countDetails,omitempty"`
@@ -29,7 +29,7 @@ type TopicEntity struct {
 	EnableExpress                       *bool              `json:"enableExpress"`
 }
 
-func (t *TopicEntity) FromServiceBus(topic *servicebus.TopicEntity) {
+func (t *TopicResponseEntity) FromServiceBus(topic *servicebus.TopicEntity) {
 	if topic == nil {
 		return
 	}
@@ -76,7 +76,7 @@ func (tr *TopicRequestEntity) GetOptions() (*[]servicebus.TopicManagementOption,
 			}
 			opts = append(opts, servicebus.TopicWithAutoDeleteOnIdle(&d))
 		}
-		if tr.Options.EnableBatchedOperation != nil {
+		if tr.Options.EnableBatchedOperation != nil && *tr.Options.EnableBatchedOperation {
 			opts = append(opts, servicebus.TopicWithBatchedOperations())
 		}
 		if tr.Options.EnableDuplicateDetection != nil {
@@ -89,7 +89,7 @@ func (tr *TopicRequestEntity) GetOptions() (*[]servicebus.TopicManagementOption,
 			}
 			opts = append(opts, servicebus.TopicWithDuplicateDetection(&d))
 		}
-		if tr.Options.EnableExpress != nil {
+		if tr.Options.EnableExpress != nil && *tr.Options.EnableExpress {
 			opts = append(opts, servicebus.TopicWithExpress())
 		}
 		if tr.Options.MaxSizeInMegabytes != nil {
@@ -105,10 +105,10 @@ func (tr *TopicRequestEntity) GetOptions() (*[]servicebus.TopicManagementOption,
 			}
 			opts = append(opts, servicebus.TopicWithMessageTimeToLive(&d))
 		}
-		if tr.Options.SupportOrdering != nil {
+		if tr.Options.SupportOrdering != nil && *tr.Options.SupportOrdering {
 			opts = append(opts, servicebus.TopicWithOrdering())
 		}
-		if tr.Options.EnablePartitioning != nil {
+		if tr.Options.EnablePartitioning != nil && *tr.Options.EnablePartitioning {
 			opts = append(opts, servicebus.TopicWithPartitioning())
 		}
 	}
