@@ -6,71 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	servicebus "github.com/Azure/azure-service-bus-go"
 	"github.com/cjlapao/common-go/log"
+	"github.com/cjlapao/servicebuscli-go/entities"
 )
-
-// QueueEntity structure
-type QueueEntity struct {
-	Name                     string
-	LockDuration             time.Duration
-	AutoDeleteOnIdle         time.Duration
-	DefaultMessageTimeToLive time.Duration
-	MaxDeliveryCount         int32
-	Forward                  ForwardEntity
-	ForwardDeadLetter        ForwardEntity
-}
-
-// NewQueue Creates a Queue entity
-func NewQueue(name string) QueueEntity {
-	result := QueueEntity{
-		MaxDeliveryCount: 10,
-	}
-
-	result.Name = name
-	result.Forward.In = ForwardToQueue
-
-	return result
-}
-
-// MapMessageForwardFlag Maps a forward flag string into it's sub components
-func (s *QueueEntity) MapMessageForwardFlag(value string) {
-	if value != "" {
-		forwardMapped := strings.Split(value, ":")
-		if len(forwardMapped) == 1 {
-			s.Forward.To = forwardMapped[0]
-		} else if len(forwardMapped) == 2 {
-			s.Forward.To = forwardMapped[1]
-			switch strings.ToLower(forwardMapped[0]) {
-			case "topic":
-				s.Forward.In = ForwardToTopic
-			case "queue":
-				s.Forward.In = ForwardToQueue
-			}
-		}
-	}
-}
-
-// MapDeadLetterForwardFlag Maps a forward dead letter flag string into it's sub components
-func (s *QueueEntity) MapDeadLetterForwardFlag(value string) {
-	if value != "" {
-		forwardMapped := strings.Split(value, ":")
-		if len(forwardMapped) == 1 {
-			s.ForwardDeadLetter.To = forwardMapped[0]
-		} else if len(forwardMapped) == 2 {
-			s.ForwardDeadLetter.To = forwardMapped[1]
-			switch strings.ToLower(forwardMapped[0]) {
-			case "topic":
-				s.ForwardDeadLetter.In = ForwardToTopic
-			case "queue":
-				s.ForwardDeadLetter.In = ForwardToQueue
-			}
-		}
-	}
-}
 
 // GetQueueManager creates a Service Bus Queue manager
 func (s *ServiceBusCli) GetQueueManager() *servicebus.QueueManager {
@@ -87,13 +29,15 @@ func (s *ServiceBusCli) GetQueueManager() *servicebus.QueueManager {
 }
 
 // GetQueue Gets a Queue object from the Service Bus Namespace
-func (s *ServiceBusCli) GetQueue(queueName string) *servicebus.Queue {
+func (s *ServiceBusCli) GetQueue(queueName string) (*servicebus.Queue, error) {
 	logger.Trace("Getting queue " + queueName + " from service bus " + s.Namespace.Name)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	if queueName == "" {
-		return nil
+		err := errors.New("queue name is empty or nil")
+		return nil, err
 	}
+
 	if s.QueueManager == nil {
 		s.GetQueueManager()
 	}
@@ -102,12 +46,26 @@ func (s *ServiceBusCli) GetQueue(queueName string) *servicebus.Queue {
 
 	if err != nil {
 		fmt.Println(err)
-		return nil
+		return nil, err
 	}
 
-	queue, err := s.Namespace.NewQueue(qe.Name)
+	return s.Namespace.NewQueue(qe.Name)
+}
 
-	return queue
+// GetQueueDetails Gets a Namespace Queue Entity with details
+func (s *ServiceBusCli) GetQueueDetails(queueName string) (*servicebus.QueueEntity, error) {
+	logger.Trace("Getting queue " + queueName + " from service bus " + s.Namespace.Name)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	defer cancel()
+	if queueName == "" {
+		err := errors.New("queue name is nil or empty")
+		return nil, err
+	}
+	if s.QueueManager == nil {
+		s.GetQueueManager()
+	}
+
+	return s.QueueManager.Get(ctx, queueName)
 }
 
 // ListQueues Lists all the Queues in a Service Bus
@@ -117,7 +75,7 @@ func (s *ServiceBusCli) ListQueues() ([]*servicebus.QueueEntity, error) {
 	defer cancel()
 	qm := s.GetQueueManager()
 	if qm == nil {
-		commonError := errors.New("There was an error getting the queue manager, check your internet connection")
+		commonError := errors.New("there was an error getting the queue manager, check your internet connection")
 		logger.LogHighlight("There was an error getting the %v, check your internet connection", log.Error, "queue manager")
 		return nil, commonError
 	}
@@ -126,14 +84,14 @@ func (s *ServiceBusCli) ListQueues() ([]*servicebus.QueueEntity, error) {
 }
 
 // CreateQueue Creates a queue in the service bus namespace
-func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
+func (s *ServiceBusCli) CreateQueue(queue entities.QueueRequestEntity) error {
 	var commonError error
 	opts := make([]servicebus.QueueManagementOption, 0)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	if queue.Name == "" {
-		commonError = errors.New("Queue name cannot be null")
+		commonError = errors.New("queue name cannot be null")
 		logger.Error(commonError.Error())
 		return commonError
 	}
@@ -142,23 +100,22 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 	qm := s.GetQueueManager()
 
 	// Checking if the queue already exists in the namespace
-	existingSubscription, err := qm.Get(ctx, queue.Name)
-	if existingSubscription != nil {
-		commonError = errors.New("Subscription " + queue.Name + " already exists  in service bus" + s.Namespace.Name)
-		logger.LogHighlight("Subscription %v already exists in service bus %v", log.Error, queue.Name, s.Namespace.Name)
+	existingQueue, _ := qm.Get(ctx, queue.Name)
+	if existingQueue != nil {
+		commonError = errors.New("queue " + queue.Name + " already exists in service bus " + s.Namespace.Name)
+		logger.LogHighlight("Queue %v already exists in service bus %v", log.Error, queue.Name, s.Namespace.Name)
 		return commonError
 	}
 
 	// Generating subscription options
-	if queue.LockDuration.Milliseconds() > 0 {
-		opts = append(opts, servicebus.QueueEntityWithLockDuration(&queue.LockDuration))
+	entityOpts, apiErr := queue.GetOptions()
+	if apiErr != nil {
+		logger.Error("There was an error creating queue")
+		logger.Error(apiErr.Message)
+		return errors.New(apiErr.Message)
 	}
-	if queue.DefaultMessageTimeToLive.Microseconds() > 0 {
-		opts = append(opts, servicebus.QueueEntityWithMessageTimeToLive(&queue.DefaultMessageTimeToLive))
-	}
-	if queue.AutoDeleteOnIdle.Microseconds() > 0 {
-		opts = append(opts, servicebus.QueueEntityWithAutoDeleteOnIdle(&queue.AutoDeleteOnIdle))
-	}
+	opts = append(opts, *entityOpts...)
+
 	if queue.MaxDeliveryCount > 0 && queue.MaxDeliveryCount != 10 {
 		opts = append(opts, servicebus.QueueEntityWithMaxDeliveryCount(int32(queue.MaxDeliveryCount)))
 	}
@@ -166,7 +123,7 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 	// Generating the forward rule, checking if the target exists or not
 	if queue.Forward.To != "" {
 		switch queue.Forward.In {
-		case ForwardToTopic:
+		case entities.ForwardToTopic:
 			tm := s.GetTopicManager()
 			target, err := tm.Get(ctx, queue.Forward.To)
 			if err != nil || target == nil {
@@ -174,7 +131,7 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 				return err
 			}
 			opts = append(opts, servicebus.QueueEntityWithAutoForward(target))
-		case ForwardToQueue:
+		case entities.ForwardToQueue:
 			qm := s.GetQueueManager()
 			target, err := qm.Get(ctx, queue.Forward.To)
 			if err != nil || target == nil {
@@ -188,26 +145,26 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 	// Generating the Dead Letter forwarding rule, checking if the target exist or not
 	if queue.ForwardDeadLetter.To != "" {
 		switch queue.ForwardDeadLetter.In {
-		case ForwardToTopic:
+		case entities.ForwardToTopic:
 			tm := s.GetTopicManager()
 			target, err := tm.Get(ctx, queue.ForwardDeadLetter.To)
 			if err != nil || target == nil {
 				logger.LogHighlight("Could not find forwarding topic %v in service bus %v", log.Error, queue.Forward.To, s.Namespace.Name)
 				return err
 			}
-			opts = append(opts, servicebus.QueueEntityWithAutoForward(target))
-		case ForwardToQueue:
+			opts = append(opts, servicebus.QueueEntityWithForwardDeadLetteredMessagesTo(target))
+		case entities.ForwardToQueue:
 			qm := s.GetQueueManager()
 			target, err := qm.Get(ctx, queue.ForwardDeadLetter.To)
 			if err != nil || target == nil {
 				logger.LogHighlight("Could not find forwarding queue %v in service bus %v", log.Error, queue.Forward.To, s.Namespace.Name)
 				return err
 			}
-			opts = append(opts, servicebus.QueueEntityWithAutoForward(target))
+			opts = append(opts, servicebus.QueueEntityWithForwardDeadLetteredMessagesTo(target))
 		}
 	}
 
-	_, err = qm.Put(ctx, queue.Name, opts...)
+	_, err := qm.Put(ctx, queue.Name, opts...)
 	if err != nil {
 		logger.Error(err.Error())
 		return err
@@ -221,7 +178,7 @@ func (s *ServiceBusCli) CreateQueue(queue QueueEntity) error {
 func (s *ServiceBusCli) DeleteQueue(queueName string) error {
 	var commonError error
 	if queueName == "" {
-		commonError = errors.New("Queue cannot be null")
+		commonError = errors.New("queue cannot be null")
 		logger.Error(commonError.Error())
 		return commonError
 	}
@@ -245,7 +202,7 @@ func (s *ServiceBusCli) SendQueueMessage(queueName string, message map[string]in
 	var commonError error
 	logger.LogHighlight("Sending a service bus queue message to %v queue in service bus %v", log.Info, queueName, s.Namespace.Name)
 	if queueName == "" {
-		commonError = errors.New("Queue cannot be null")
+		commonError = errors.New("queue cannot be null")
 		logger.Error(commonError.Error())
 		return commonError
 	}
@@ -253,8 +210,8 @@ func (s *ServiceBusCli) SendQueueMessage(queueName string, message map[string]in
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	queue := s.GetQueue(queueName)
-	if queue == nil {
+	queue, err := s.GetQueue(queueName)
+	if queue == nil || err != nil {
 		commonError = errors.New("Could not find queue " + queueName + " in service bus " + s.Namespace.Name)
 		logger.LogHighlight("Could not find queue %v in service bus %v", log.Error, queueName, s.Namespace.Name)
 		return commonError
@@ -288,6 +245,39 @@ func (s *ServiceBusCli) SendQueueMessage(queueName string, message map[string]in
 	return nil
 }
 
+// SendQueueServiceBusMessage Sends a Service Bus Message to a Queue
+func (s *ServiceBusCli) SendQueueServiceBusMessage(queueName string, sbMessage *servicebus.Message) error {
+	var commonError error
+	logger.LogHighlight("Sending a service bus queue message to %v queue in service bus %v", log.Info, queueName, s.Namespace.Name)
+	if queueName == "" {
+		commonError = errors.New("queue cannot be null")
+		logger.Error(commonError.Error())
+		return commonError
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	queue, err := s.GetQueue(queueName)
+	if queue == nil || err != nil {
+		commonError = errors.New("Could not find queue " + queueName + " in service bus " + s.Namespace.Name)
+		logger.LogHighlight("Could not find queue %v in service bus %v", log.Error, queueName, s.Namespace.Name)
+		return commonError
+	}
+
+	err = queue.Send(ctx, sbMessage)
+
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	logger.LogHighlight("Service bus queue message was sent successfully to %v queue in service bus %v", log.Info, queueName, s.Namespace.Name)
+	logger.Info("Message:")
+	logger.Info(string(sbMessage.Data))
+	return nil
+}
+
 // SubscribeToQueue Subscribes to a queue and listen to the messages
 func (s *ServiceBusCli) SubscribeToQueue(queueName string) error {
 	var commonError error
@@ -316,8 +306,8 @@ func (s *ServiceBusCli) SubscribeToQueue(queueName string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	queue := s.GetQueue(queueName)
-	if queue == nil {
+	queue, err := s.GetQueue(queueName)
+	if queue == nil || err != nil {
 		commonError = errors.New("Could not find queue " + queueName + " in service bus" + s.Namespace.Name)
 		logger.LogHighlight("Could not find queue %v in service bus %v", log.Error, queueName, s.Namespace.Name)
 		return commonError
@@ -353,4 +343,205 @@ func (s *ServiceBusCli) CloseQueueSubscription() error {
 	s.ActiveQueueListenerHandle = nil
 	s.CloseQueueListener <- false
 	return nil
+}
+
+// GetSubscriptionActiveMessages Gets messages from a subscription
+func (s *ServiceBusCli) GetQueueActiveMessages(queueName string, qty int, peek bool) ([]servicebus.Message, error) {
+	var commonError error
+	messages := make([]servicebus.Message, 0)
+
+	// We will have a maximum of fetch of 100 messages per query
+	if qty > 100 {
+		qty = 100
+	}
+
+	logger.LogHighlight("Getting message for queue %v in service bus %v", log.Info, queueName, s.Namespace.Name)
+	queue, _ := s.GetQueue(queueName)
+	if queue == nil {
+		commonError = errors.New("Could not find queue " + queueName + " in service bus namespace" + s.Namespace.Name)
+		logger.LogHighlight("Could not find queue %v in service bus %v", log.Error, queueName, s.Namespace.Name)
+		return messages, commonError
+	}
+
+	s.ActiveQueue = queue
+	qm := s.GetQueueManager()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	queueEntity, commonError := qm.Get(ctx, queueName)
+	if commonError != nil {
+		return messages, commonError
+	}
+
+	if *queueEntity.CountDetails.ActiveMessageCount <= 0 {
+		return messages, nil
+	}
+
+	messageCount := int(*queueEntity.CountDetails.ActiveMessageCount)
+
+	// If we set the message count to 0 then we will read a batch of the messages that exists
+	if qty == 0 {
+		qty = messageCount
+		// we will need to check again that the message count is not bigger than 100 and will set the limit again if so
+		if qty > 100 {
+			qty = 100
+		}
+	}
+
+	// if we do not have as many messages in the system as requested we will adjust the quantity to the amount of messages in the system
+	if messageCount < qty {
+		qty = messageCount
+	}
+
+	var waitForMessages sync.WaitGroup
+	waitForMessages.Add(qty)
+
+	// Creating a message handler function to deal with our messages
+	var messageHandler servicebus.HandlerFunc = func(c context.Context, m *servicebus.Message) error {
+		mCtx, mCancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+		defer mCancel()
+		m.Complete(mCtx)
+
+		messages = append(messages, *m)
+		// notify the wait group that the message is dealt with
+		waitForMessages.Done()
+		return nil
+	}
+
+	// Creating the receiver for the messages in the subscription
+	messageReceiver, commonError := queue.NewReceiver(ctx)
+
+	if commonError != nil {
+		return nil, commonError
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	// Background task to receive all of the messages we need
+	go func() {
+		for i := 0; i < qty; i++ {
+			if peek {
+				m, commonError := queue.PeekOne(ctx)
+				if commonError == nil {
+					messages = append(messages, *m)
+				}
+				waitForMessages.Done()
+			} else {
+				if err := messageReceiver.ReceiveOne(ctx, messageHandler); err != nil {
+					fmt.Println(err.Error())
+				}
+			}
+		}
+	}()
+
+	waitForMessages.Wait()
+
+	// We are finished and we should now close the receiver before leaving
+	_ = queue.Close(ctx)
+	_ = messageReceiver.Close(ctx)
+
+	return messages, nil
+}
+
+func (s *ServiceBusCli) GetQueueDeadLetterMessages(queueName string, qty int, peek bool) ([]servicebus.Message, error) {
+	var commonError error
+	messages := make([]servicebus.Message, 0)
+
+	// We will have a maximum of fetch of 100 messages per query
+	if qty > 100 {
+		qty = 100
+	}
+
+	logger.LogHighlight("Getting dead letter messages for queue %v in service bus %v", log.Info, queueName, s.Namespace.Name)
+	if queueName == "" {
+		commonError = errors.New("Topic " + queueName + " cannot be null")
+		logger.LogHighlight("Topic %v cannot be null", log.Error, queueName)
+		return messages, commonError
+	}
+
+	queue, _ := s.GetQueue(queueName)
+	if queue == nil {
+		commonError = errors.New("Could not find queue " + queueName + " in service bus namespace" + s.Namespace.Name)
+		logger.LogHighlight("Could not find queue %v in service bus %v", log.Error, queueName, s.Namespace.Name)
+		return messages, commonError
+	}
+
+	s.ActiveQueue = queue
+	qm := s.GetQueueManager()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	queueEntity, _ := qm.Get(ctx, queueName)
+
+	if *queueEntity.CountDetails.DeadLetterMessageCount <= 0 {
+		return messages, nil
+	}
+
+	messageCount := int(*queueEntity.CountDetails.DeadLetterMessageCount)
+
+	// If we set the message count to 0 then we will read a batch of the messages that exists
+	if qty == 0 {
+		qty = messageCount
+		// we will need to check again that the message count is not bigger than 100 and will set the limit again if so
+		if qty > 100 {
+			qty = 100
+		}
+	}
+
+	// if we do not have as many messages in the system as requested we will adjust the quantity to the amount of messages in the system
+	if messageCount < qty {
+		qty = messageCount
+	}
+
+	var waitForMessages sync.WaitGroup
+	waitForMessages.Add(qty)
+
+	// Creating a message handler function to deal with our messages
+	var messageHandler servicebus.HandlerFunc = func(c context.Context, m *servicebus.Message) error {
+		mCtx, mCancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+		defer mCancel()
+
+		if peek {
+			m.Abandon(ctx)
+		} else {
+			m.Complete(mCtx)
+		}
+
+		messages = append(messages, *m)
+		// notify the wait group that the message is dealt with
+		waitForMessages.Done()
+		return nil
+	}
+
+	// Creating the receiver for the messages in the subscription
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	var deadLetterReceiver servicebus.ReceiveOner
+	if peek {
+		deadLetterReceiver, commonError = queue.NewDeadLetterReceiver(ctx, servicebus.ReceiverWithReceiveMode(servicebus.PeekLockMode))
+
+	} else {
+		deadLetterReceiver, commonError = queue.NewDeadLetterReceiver(ctx)
+	}
+
+	if commonError != nil {
+		return nil, commonError
+	}
+
+	// Background task to receive all of the messages we need
+	go func() {
+		for i := 0; i < qty; i++ {
+			if err := deadLetterReceiver.ReceiveOne(ctx, messageHandler); err != nil {
+				fmt.Println(err.Error())
+			}
+		}
+	}()
+
+	waitForMessages.Wait()
+
+	// We are finished and we should now close the receiver before leaving
+	_ = queue.Close(ctx)
+	_ = deadLetterReceiver.Close(ctx)
+
+	return messages, nil
 }

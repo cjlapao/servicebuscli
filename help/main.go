@@ -12,13 +12,13 @@ var logger = log.Get()
 
 // PrintMainCommandHelper Prints specific Help
 func PrintMainCommandHelper() {
-	logger.Info("")
 	logger.Info("Please choose a command:")
 	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus [command]")
 	logger.Info("")
 	logger.Info("Available Commands:")
+	logger.Info("  api           Starts Service Bus Client in Api Mode")
 	logger.Info("  topic         Service bus topic command")
 	logger.Info("  queue         Service bus queue command")
 }
@@ -41,7 +41,6 @@ func PrintMissingServiceBusConnectionHelper() {
 
 // PrintTopicMainCommandHelper Prints specific Help
 func PrintTopicMainCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus topic [subcommand]")
 	logger.Info("")
@@ -58,7 +57,6 @@ func PrintTopicMainCommandHelper() {
 
 // PrintTopicListSubscriptionsCommandHelper Prints specific Help
 func PrintTopicListSubscriptionsCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus topic list-subscriptions [Options]")
 	logger.Info("")
@@ -77,7 +75,6 @@ func PrintTopicListSubscriptionsCommandHelper() {
 
 // PrintTopicDeleteTopicCommandHelper Prints specific Help
 func PrintTopicDeleteTopicCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus topic delete [Options]")
 	logger.Info("")
@@ -96,7 +93,6 @@ func PrintTopicDeleteTopicCommandHelper() {
 
 // PrintTopicCreateSubscriptionCommandHelper Prints specific Help
 func PrintTopicCreateSubscriptionCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus topic create-subscription [Options]")
 	logger.Info("")
@@ -126,7 +122,6 @@ func PrintTopicCreateSubscriptionCommandHelper() {
 
 // PrintTopicCreateTopicCommandHelper Prints specific Help
 func PrintTopicCreateTopicCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus topic create [Options]")
 	logger.Info("")
@@ -145,7 +140,6 @@ func PrintTopicCreateTopicCommandHelper() {
 
 // PrintTopicDeleteSubscriptionCommandHelper Prints specific Help
 func PrintTopicDeleteSubscriptionCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus topic create-subscription [Options]")
 	logger.Info("")
@@ -165,7 +159,6 @@ func PrintTopicDeleteSubscriptionCommandHelper() {
 
 // PrintTopicSubscribeCommandHelper Prints specific Help
 func PrintTopicSubscribeCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus topic subscribe [options]")
 	logger.Info("")
@@ -200,7 +193,6 @@ func PrintTopicSubscribeCommandHelper() {
 
 // PrintTopicSendCommandHelper Prints specific Help
 func PrintTopicSendCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus topic send [options]")
 	logger.Info("")
@@ -234,7 +226,6 @@ func PrintTopicSendCommandHelper() {
 
 // PrintQueueMainCommandHelper Prints specific Help
 func PrintQueueMainCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus queue [subcommand]")
 	logger.Info("")
@@ -248,7 +239,6 @@ func PrintQueueMainCommandHelper() {
 
 // PrintQueueDeleteCommandHelper Prints specific Help
 func PrintQueueDeleteCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus queue delete [Options]")
 	logger.Info("")
@@ -267,7 +257,6 @@ func PrintQueueDeleteCommandHelper() {
 
 // PrintQueueCreateCommandHelper Prints specific Help
 func PrintQueueCreateCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus queue create-subscription [Options]")
 	logger.Info("")
@@ -292,7 +281,6 @@ func PrintQueueCreateCommandHelper() {
 
 // PrintQueueSendCommandHelper Prints specific Help
 func PrintQueueSendCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus queue send [options]")
 	logger.Info("")
@@ -326,7 +314,6 @@ func PrintQueueSendCommandHelper() {
 
 // PrintQueueSubscribeCommandHelper Prints specific Help
 func PrintQueueSubscribeCommandHelper() {
-	logger.Info("")
 	logger.Info("Usage:")
 	logger.Info("  servicebus queue subscribe [options]")
 	logger.Info("")

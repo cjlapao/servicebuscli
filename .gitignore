@@ -25,3 +25,5 @@ job_*.md
 .local/
 .temp/
 bin/
+*local*
+*personal*

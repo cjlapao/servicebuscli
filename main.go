@@ -11,6 +11,9 @@ import (
 
 	"github.com/cjlapao/common-go/helper"
 	"github.com/cjlapao/common-go/log"
+	"github.com/cjlapao/common-go/version"
+	"github.com/cjlapao/servicebuscli-go/controller"
+	"github.com/cjlapao/servicebuscli-go/entities"
 	"github.com/cjlapao/servicebuscli-go/help"
 	"github.com/cjlapao/servicebuscli-go/servicebus"
 	"github.com/cjlapao/servicebuscli-go/startup"
@@ -18,13 +21,15 @@ import (
 )
 
 var logger = log.Get()
+var ver = version.Get()
 
 func main() {
-	logger.Command("************************************************************")
-	logger.Command("*            Carlos Lapao Service Bus Tool v1.0            *")
-	logger.Command("*                                                          *")
-	logger.Command("*  Author: Carlos Lapao                                    *")
-	logger.Command("************************************************************")
+	ver.Name = "Service Bus Tool"
+	ver.Author = "Carlos Lapao"
+	ver.License = "MIT"
+	ver.Rev = 1
+	ver.PrintHeader()
+
 	connStr := os.Getenv("SERVICEBUS_CONNECTION_STRING")
 
 	helpArg := helper.GetFlagSwitch("help", false)
@@ -41,6 +46,8 @@ func main() {
 	}
 
 	switch module {
+	case "api":
+		controller.RestApiModuleProcessor()
 	case "topic":
 		command := GetCommandArgument()
 		if command == "" {
@@ -189,7 +196,7 @@ func main() {
 				os.Exit(0)
 			}
 			sbcli := servicebus.NewCli(connStr)
-			err := sbcli.CreateTopic(topic)
+			_, err := sbcli.CreateTopic(topic)
 			if err != nil {
 				os.Exit(1)
 			}
@@ -215,13 +222,13 @@ func main() {
 			}
 			sbcli := servicebus.NewCli(connStr)
 
-			subscription := servicebus.NewSubscription(topicName, subscriptionName)
+			subscription := entities.NewSubscriptionRequest(topicName, subscriptionName)
 			subscription.MapMessageForwardFlag(forwardTo)
 			subscription.MapDeadLetterForwardFlag(forwardDeadLetterTo)
 			for _, rule := range rules {
 				subscription.MapRuleFlag(rule)
 			}
-			err := sbcli.CreateSubscription(subscription)
+			err := sbcli.CreateSubscription(*subscription, false)
 			if err != nil {
 				os.Exit(1)
 			}
@@ -447,11 +454,11 @@ func main() {
 
 			sbcli := servicebus.NewCli(connStr)
 
-			queue := servicebus.NewQueue(queueName)
+			queue := entities.NewQueueRequest(queueName)
 			queue.MapMessageForwardFlag(forwardTo)
 			queue.MapDeadLetterForwardFlag(forwardDeadLetterTo)
 
-			err := sbcli.CreateQueue(queue)
+			err := sbcli.CreateQueue(*queue)
 			if err != nil {
 				os.Exit(1)
 			}

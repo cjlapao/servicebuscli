@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: servicebuscli 
+  labels: 
+    app: servicebuscli
+spec: 
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: servicebuscli
+  template:
+    metadata:
+      labels: 
+        app: servicebuscli
+    spec:
+      containers: 
+      - name: servicebuscli 
+        image: cjlapao/servicebuscli:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+          - name: SERVICEBUS_CONNECTION_STRING
+            valueFrom:
+              secretKeyRef:
+                name: servicebuscli-secrets
+                key: connectionString
+
+          - name: SERVICEBUS_CLI_HTTP_PORT
+            value: "80"
+        resources:
+          requests:
+            cpu: "0.05"
+            memory: "25Mi"
+          limits:
+            cpu: "0.1"
+            memory: "100Mi"

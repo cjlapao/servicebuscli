@@ -9,21 +9,6 @@ import (
 
 var logger = log.Get()
 
-// ForwardingDestination Enum
-type ForwardingDestination int
-
-// ForwardingDestination Enum definition
-const (
-	ForwardToTopic ForwardingDestination = iota
-	ForwardToQueue
-)
-
-// ForwardEntity struct
-type ForwardEntity struct {
-	To string
-	In ForwardingDestination
-}
-
 // ServiceBusCli Entity
 type ServiceBusCli struct {
 	ConnectionString          string
