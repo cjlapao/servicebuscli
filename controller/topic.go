@@ -129,7 +129,7 @@ func (c *Controller) CreateTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isValid, validError := topic.IsValidate()
+	isValid, validError := topic.IsValid()
 	var sbTopic *servicebus.TopicEntity
 	if !isValid {
 		if validError != nil {
@@ -204,7 +204,7 @@ func (c *Controller) SendTopicMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := entities.ServiceBusMessageRequest{}
+	message := entities.MessageRequest{}
 	err = json.Unmarshal(reqBody, &message)
 
 	// Body deserialization error

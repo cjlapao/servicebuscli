@@ -84,7 +84,7 @@ func (s *ServiceBusCli) ListQueues() ([]*servicebus.QueueEntity, error) {
 }
 
 // CreateQueue Creates a queue in the service bus namespace
-func (s *ServiceBusCli) CreateQueue(queue entities.QueueRequestEntity) error {
+func (s *ServiceBusCli) CreateQueue(queue entities.QueueRequest) error {
 	var commonError error
 	opts := make([]servicebus.QueueManagementOption, 0)
 
@@ -121,7 +121,7 @@ func (s *ServiceBusCli) CreateQueue(queue entities.QueueRequestEntity) error {
 	}
 
 	// Generating the forward rule, checking if the target exists or not
-	if queue.Forward.To != "" {
+	if queue.Forward != nil && queue.Forward.To != "" {
 		switch queue.Forward.In {
 		case entities.ForwardToTopic:
 			tm := s.GetTopicManager()
@@ -143,7 +143,7 @@ func (s *ServiceBusCli) CreateQueue(queue entities.QueueRequestEntity) error {
 	}
 
 	// Generating the Dead Letter forwarding rule, checking if the target exist or not
-	if queue.ForwardDeadLetter.To != "" {
+	if queue.ForwardDeadLetter != nil && queue.ForwardDeadLetter.To != "" {
 		switch queue.ForwardDeadLetter.In {
 		case entities.ForwardToTopic:
 			tm := s.GetTopicManager()
@@ -198,7 +198,7 @@ func (s *ServiceBusCli) DeleteQueue(queueName string) error {
 }
 
 // SendQueueMessage Sends a Service Bus Message to a Queue
-func (s *ServiceBusCli) SendQueueMessage(queueName string, message map[string]interface{}, label string, userParameters map[string]interface{}) error {
+func (s *ServiceBusCli) SendQueueMessage(queueName string, message entities.MessageRequest) error {
 	var commonError error
 	logger.LogHighlight("Sending a service bus queue message to %v queue in service bus %v", log.Info, queueName, s.Namespace.Name)
 	if queueName == "" {
@@ -223,16 +223,14 @@ func (s *ServiceBusCli) SendQueueMessage(queueName string, message map[string]in
 		return err
 	}
 
-	sbMessage := servicebus.Message{
-		Data:           messageData,
-		UserProperties: userParameters,
+	sbMessage, err := message.ToServiceBus()
+
+	if err != nil {
+		logger.Error(err.Error())
+		return err
 	}
 
-	if label != "" {
-		sbMessage.Label = label
-	}
-
-	err = queue.Send(ctx, &sbMessage)
+	err = queue.Send(ctx, sbMessage)
 
 	if err != nil {
 		logger.Error(err.Error())
@@ -419,15 +417,22 @@ func (s *ServiceBusCli) GetQueueActiveMessages(queueName string, qty int, peek b
 
 	// Background task to receive all of the messages we need
 	go func() {
-		for i := 0; i < qty; i++ {
-			if peek {
-				m, commonError := queue.PeekOne(ctx)
-				if commonError == nil {
-					messages = append(messages, *m)
+		if peek {
+			t, err := queue.Peek(ctx)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			for i := 0; i < qty; i++ {
+				m, err := t.Next(ctx)
+				if err != nil {
+					fmt.Println(err.Error())
 				}
+				messages = append(messages, *m)
 				waitForMessages.Done()
-			} else {
-				if err := messageReceiver.ReceiveOne(ctx, messageHandler); err != nil {
+			}
+		} else {
+			for i := 0; i < qty; i++ {
+				if err := queue.ReceiveOne(ctx, messageHandler); err != nil {
 					fmt.Println(err.Error())
 				}
 			}

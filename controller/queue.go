@@ -5,35 +5,44 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/cjlapao/servicebuscli-go/entities"
 	"github.com/gorilla/mux"
 )
 
-// GetQueues Gets all queues in the namespace
+// GetQueues Gets all queues in the current namespace
 func (c *Controller) GetQueues(w http.ResponseWriter, r *http.Request) {
 	errorResponse := entities.ApiErrorResponse{}
 	azQueues, err := sbcli.ListQueues()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Error Query"
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	queues := make([]entities.QueueResponseEntity, 0)
+	queues := make([]entities.QueueResponse, 0)
+
+	if len(azQueues) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		json.NewEncoder(w).Encode(queues)
+		return
+	}
+
 	for _, azQueue := range azQueues {
-		queue := entities.QueueResponseEntity{}
+		queue := entities.QueueResponse{}
 		queue.FromServiceBus(azQueue)
 		queues = append(queues, queue)
 	}
 
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(queues)
 }
 
-// GetQueues Gets all queues in the namespace
+// GetQueue Gets the details of a specific Queue in the current namespace
 func (c *Controller) GetQueue(w http.ResponseWriter, r *http.Request) {
 	errorResponse := entities.ApiErrorResponse{}
 	vars := mux.Vars(r)
@@ -43,24 +52,33 @@ func (c *Controller) GetQueue(w http.ResponseWriter, r *http.Request) {
 	if queueName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "queue name is null"
-		errorResponse.Message = "queue name is null"
+		errorResponse.Error = "Server Error"
+		errorResponse.Message = "Queue name parameter cannot be null or empty"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	queue, err := sbcli.GetQueueDetails(queueName)
 
-	if queue == nil || err != nil {
+	if queue == nil && strings.Contains(err.Error(), "not found") {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "queue not found"
-		errorResponse.Message = "queue with name " + queueName + " was not found in " + sbcli.Namespace.Name
+		errorResponse.Error = "Queue Not Found"
+		errorResponse.Message = "Queue with name " + queueName + " was not found in " + sbcli.Namespace.Name
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	response := entities.QueueResponseEntity{}
+	if queue == nil && err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Server Error"
+		errorResponse.Message = err.Error()
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	response := entities.QueueResponse{}
 	response.FromServiceBus(queue)
 	json.NewEncoder(w).Encode(response)
 }
@@ -69,6 +87,10 @@ func (c *Controller) GetQueue(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) UpsertQueue(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	errorResponse := entities.ApiErrorResponse{}
+	upsert := false
+	if r.Method == "PUT" {
+		upsert = true
+	}
 
 	// Body cannot be null error
 	if err != nil {
@@ -80,7 +102,7 @@ func (c *Controller) UpsertQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queueRequest := entities.QueueRequestEntity{}
+	queueRequest := entities.QueueRequest{}
 	err = json.Unmarshal(reqBody, &queueRequest)
 
 	// Body deserialization error
@@ -102,6 +124,19 @@ func (c *Controller) UpsertQueue(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
+		}
+	}
+
+	if !upsert {
+		queueExists, _ := sbcli.GetQueue(queueRequest.Name)
+
+		if queueExists != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			found := entities.ApiSuccessResponse{
+				Message: "The Queue " + queueRequest.Name + " already exists in " + sbcli.Namespace.Name + ", ignoring",
+			}
+			json.NewEncoder(w).Encode(found)
+			return
 		}
 	}
 
@@ -127,13 +162,13 @@ func (c *Controller) UpsertQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := entities.QueueResponseEntity{}
+	response := entities.QueueResponse{}
 	response.FromServiceBus(createdQueue)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
 
-// DeleteTopicSubscription Deletes subscription from a topic in the namespace
+// DeleteQueue Deletes a Queue in the namespace
 func (c *Controller) DeleteQueue(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	queueName := vars["queueName"]
@@ -142,18 +177,27 @@ func (c *Controller) DeleteQueue(w http.ResponseWriter, r *http.Request) {
 	if queueName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
+		errorResponse.Error = "Server Error"
+		errorResponse.Message = "Queue name parameter cannot be null or empty"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	queue, err := sbcli.GetQueueDetails(queueName)
-	if queue == nil || err != nil {
+	if queue == nil && strings.Contains(err.Error(), "not found") {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "Topic not found"
-		errorResponse.Message = "The Topic " + queueName + " was not found in the service bus " + sbcli.Namespace.Name
+		errorResponse.Error = "Queue Not Found"
+		errorResponse.Message = "Queue with name " + queueName + " was not found in " + sbcli.Namespace.Name
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	if queue == nil && err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Server Error"
+		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
@@ -162,30 +206,27 @@ func (c *Controller) DeleteQueue(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "Error Deleting Subscription"
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	response := entities.QueueResponseEntity{}
-	response.FromServiceBus(queue)
 	w.WriteHeader(http.StatusAccepted)
-	json.NewEncoder(w).Encode(response)
 }
 
+// SendQueueMessage Sends a Message to a Queue in the current namespace
 func (c *Controller) SendQueueMessage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	queueName := vars["queueName"]
 	reqBody, err := ioutil.ReadAll(r.Body)
 	errorResponse := entities.ApiErrorResponse{}
 
-	// Topic Name cannot be nil
 	if queueName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Queue name is null"
-		errorResponse.Message = "Queue name cannot be null"
+		errorResponse.Error = "Server Error"
+		errorResponse.Message = "Queue name parameter cannot be null or empty"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
@@ -200,7 +241,7 @@ func (c *Controller) SendQueueMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := entities.ServiceBusMessageRequest{}
+	message := entities.MessageRequest{}
 	err = json.Unmarshal(reqBody, &message)
 
 	// Body deserialization error
@@ -229,7 +270,7 @@ func (c *Controller) SendQueueMessage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Error Sending Topic Message"
+		errorResponse.Error = "Error Sending Queue Message"
 		errorResponse.Message = "There was an error sending message to queue " + queueName
 		json.NewEncoder(w).Encode(errorResponse)
 		return
@@ -244,7 +285,7 @@ func (c *Controller) SendQueueMessage(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetSubscriptionMessages Gets messages from a topic subscription
+// GetQueueMessages Gets messages from a Queue in the current namespace
 func (c *Controller) GetQueueMessages(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	queueName := vars["queueName"]
@@ -267,7 +308,7 @@ func (c *Controller) GetQueueMessages(w http.ResponseWriter, r *http.Request) {
 
 	errorResponse := entities.ApiErrorResponse{}
 
-	// Topic Name cannot be nil
+	// Queue Name cannot be nil
 	if queueName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
@@ -293,9 +334,9 @@ func (c *Controller) GetQueueMessages(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	} else {
-		response := make([]entities.ServiceBusMessageRequest, 0)
+		response := make([]entities.MessageResponse, 0)
 		for _, msg := range result {
-			entityMsg := entities.ServiceBusMessageRequest{}
+			entityMsg := entities.MessageResponse{}
 			entityMsg.FromServiceBus(&msg)
 			response = append(response, entityMsg)
 		}
@@ -305,7 +346,7 @@ func (c *Controller) GetQueueMessages(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetSubscriptionMessages Gets messages from a topic subscription
+// GetQueueDeadLetterMessages Gets dead letters from a Queue in the current namespace
 func (c *Controller) GetQueueDeadLetterMessages(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	queueName := vars["queueName"]
@@ -328,12 +369,12 @@ func (c *Controller) GetQueueDeadLetterMessages(w http.ResponseWriter, r *http.R
 
 	errorResponse := entities.ApiErrorResponse{}
 
-	// Topic Name cannot be nil
+	// Queue Name cannot be nil
 	if queueName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
+		errorResponse.Error = "Queue name is null"
+		errorResponse.Message = "Queue name cannot be null"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
@@ -354,9 +395,9 @@ func (c *Controller) GetQueueDeadLetterMessages(w http.ResponseWriter, r *http.R
 		w.WriteHeader(http.StatusNoContent)
 		return
 	} else {
-		response := make([]entities.ServiceBusMessageRequest, 0)
+		response := make([]entities.MessageResponse, 0)
 		for _, msg := range result {
-			entityMsg := entities.ServiceBusMessageRequest{}
+			entityMsg := entities.MessageResponse{}
 			entityMsg.FromServiceBus(&msg)
 			response = append(response, entityMsg)
 		}

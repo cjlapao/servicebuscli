@@ -47,7 +47,7 @@ func (s *ServiceBusCli) ListSubscriptions(topicName string) ([]*servicebus.Subsc
 }
 
 // CreateSubscription Creates a subscription to a topic in the service bus
-func (s *ServiceBusCli) CreateSubscription(subscription entities.SubscriptionRequestEntity, upsert bool) error {
+func (s *ServiceBusCli) CreateSubscription(subscription entities.SubscriptionRequest, upsert bool) error {
 	var commonError error
 	opts := make([]servicebus.SubscriptionManagementOption, 0)
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
@@ -196,7 +196,7 @@ func (s *ServiceBusCli) DeleteSubscriptionRule(topicName string, subscriptionNam
 }
 
 // CreateSubscriptionRule Creates a rule to a specific subscription
-func (s *ServiceBusCli) CreateSubscriptionRule(subscription entities.SubscriptionRequestEntity, rule entities.RuleRequestEntity) error {
+func (s *ServiceBusCli) CreateSubscriptionRule(subscription entities.SubscriptionRequest, rule entities.RuleRequest) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	logger.LogHighlight("Creating subscription rule %v in subscription %v on topic %v in service bus %v", log.Info, rule.Name, subscription.Name, subscription.TopicName, s.Namespace.Name)
@@ -454,14 +454,21 @@ func (s *ServiceBusCli) GetSubscriptionActiveMessages(topicName string, subscrip
 
 	// Background task to receive all of the messages we need
 	go func() {
-		for i := 0; i < qty; i++ {
-			if peek {
-				m, commonError := messageReceiver.PeekOne(ctx)
-				if commonError == nil {
-					messages = append(messages, *m)
+		if peek {
+			t, err := messageReceiver.Peek(ctx)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			for i := 0; i < qty; i++ {
+				m, err := t.Next(ctx)
+				if err != nil {
+					fmt.Println(err.Error())
 				}
+				messages = append(messages, *m)
 				waitForMessages.Done()
-			} else {
+			}
+		} else {
+			for i := 0; i < qty; i++ {
 				if err := messageReceiver.ReceiveOne(ctx, messageHandler); err != nil {
 					fmt.Println(err.Error())
 				}

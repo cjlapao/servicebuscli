@@ -37,12 +37,12 @@ func handleRequests() {
 		port = "10000"
 	}
 
-	logger.Info("Starting Api Server on port " + port)
+	logger.Info("Api Server starting on port " + port + ".")
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(commonMiddleware)
 	router.HandleFunc("/", homePage)
 	_ = NewAPIController(router)
-	logger.Success("Finished Init")
+	logger.Success("API Server ready on port " + port + ".")
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }
 
@@ -78,7 +78,7 @@ func commonMiddleware(next http.Handler) http.Handler {
 
 func ServiceBusConnectionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Info("[%v] %v route...", r.Method, r.URL.Path)
+		logger.Info("[%v] %v route requested by %v.", r.Method, r.URL.Path, r.RemoteAddr)
 		if connStr == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("No Azure Service Bus Connection String defined"))
@@ -119,6 +119,7 @@ func NewAPIController(router *mux.Router) Controller {
 	// Queues Controllers
 	controller.Router.HandleFunc("/queues", controller.GetQueues).Methods("GET")
 	controller.Router.HandleFunc("/queues", controller.UpsertQueue).Methods("POST")
+	controller.Router.HandleFunc("/queues", controller.UpsertQueue).Methods("PUT")
 	controller.Router.HandleFunc("/queues/{queueName}", controller.GetQueue).Methods("GET")
 	controller.Router.HandleFunc("/queues/{queueName}", controller.DeleteQueue).Methods("DELETE")
 	controller.Router.HandleFunc("/queues/{queueName}/send", controller.SendQueueMessage).Methods("PUT")

@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
-	"time"
+	"syscall"
 
 	"github.com/cjlapao/common-go/helper"
 	"github.com/cjlapao/common-go/log"
@@ -17,7 +17,6 @@ import (
 	"github.com/cjlapao/servicebuscli-go/help"
 	"github.com/cjlapao/servicebuscli-go/servicebus"
 	"github.com/cjlapao/servicebuscli-go/startup"
-	"github.com/rs/xid"
 )
 
 var logger = log.Get()
@@ -76,7 +75,7 @@ func main() {
 			}
 
 			signalChan := make(chan os.Signal, 1)
-			signal.Notify(signalChan, os.Interrupt, os.Kill)
+			signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
 			var wg sync.WaitGroup
 			wg.Add(len(topics))
@@ -168,22 +167,6 @@ func main() {
 			} else {
 				logger.LogHighlight("No subscriptions found on topic %v in service bus %v", log.Info, topic, sbcli.Namespace.Name)
 			}
-		case "delete":
-			if helpArg {
-				help.PrintTopicDeleteTopicCommandHelper()
-				os.Exit(0)
-			}
-			topic := helper.GetFlagValue("name", "")
-			if topic == "" {
-				logger.Error("Missing topic name mandatory argument --name")
-				help.PrintTopicDeleteTopicCommandHelper()
-				os.Exit(0)
-			}
-			sbcli := servicebus.NewCli(connStr)
-			err := sbcli.DeleteTopic(topic)
-			if err != nil {
-				os.Exit(1)
-			}
 		case "create":
 			if helpArg {
 				help.PrintTopicCreateTopicCommandHelper()
@@ -232,6 +215,22 @@ func main() {
 			if err != nil {
 				os.Exit(1)
 			}
+		case "delete":
+			if helpArg {
+				help.PrintTopicDeleteTopicCommandHelper()
+				os.Exit(0)
+			}
+			topic := helper.GetFlagValue("name", "")
+			if topic == "" {
+				logger.Error("Missing topic name mandatory argument --name")
+				help.PrintTopicDeleteTopicCommandHelper()
+				os.Exit(0)
+			}
+			sbcli := servicebus.NewCli(connStr)
+			err := sbcli.DeleteTopic(topic)
+			if err != nil {
+				os.Exit(1)
+			}
 		case "delete-subscription":
 			if helpArg {
 				help.PrintTopicDeleteSubscriptionCommandHelper()
@@ -260,15 +259,11 @@ func main() {
 				os.Exit(0)
 			}
 			topic := helper.GetFlagValue("topic", "")
-			tenantID := helper.GetFlagValue("tenant", "11111111-1111-1111-1111-555555550001")
-			useDefault := helper.GetFlagSwitch("default", false)
-			unoFormat := helper.GetFlagSwitch("uno", false)
 			body := helper.GetFlagValue("body", "")
 			label := helper.GetFlagValue("label", "ServiceBus.Tools")
-			name := helper.GetFlagValue("name", "")
-			domain := helper.GetFlagValue("domain", "")
-			sender := helper.GetFlagValue("sender", "ServiceBus.Tools")
-			version := helper.GetFlagValue("version", "1.0")
+			filePath := helper.GetFlagValue("file", "")
+			correlationID := helper.GetFlagValue("correlationID", "")
+			contentType := helper.GetFlagValue("contentType", "")
 			propertiesFlags := helper.GetFlagArrayValue("property")
 
 			if topic == "" {
@@ -277,65 +272,52 @@ func main() {
 				os.Exit(0)
 			}
 
-			var message map[string]interface{}
-			if useDefault && body == "" {
-				if !unoFormat {
-					domain = "TimeService"
-					name = "TimePassed"
-				} else {
-					domain = ""
-					name = ""
-				}
-				message = map[string]interface{}{
-					"Timestamp": time.Now().Format("2006-01-02T15:04:05.00000000-07:00"),
-					"TheTime":   time.Now().Format("2006-01-02T15:04:05"),
-				}
-			} else if body != "" {
-				err := json.Unmarshal([]byte(body), &message)
+			sbMessage := entities.MessageRequest{}
+			if filePath != "" {
+				err := sbMessage.FromFile(filePath)
 				if err != nil {
 					logger.Error(err.Error())
 					os.Exit(1)
 				}
 			} else {
-				logger.LogHighlight("Missing message body, use %v='{\"example\": \"object\"}' or use the %v flag, this will generate a TimeService sample message", log.Info, "--body", "--default")
-				help.PrintTopicSendCommandHelper()
-				os.Exit(0)
-			}
-			var properties map[string]interface{}
-			if len(propertiesFlags) == 0 || useDefault {
-				if domain != "" && name != "" {
-					label = domain + "." + name
-					diagnosticID := xid.New().String()
-					properties = map[string]interface{}{
-						"X-MsgTypeVersion": version,
-						"X-MsgDomain":      domain,
-						"X-MsgName":        name,
-						"X-Sender":         sender,
-						"X-TenantId":       tenantID,
-						"Diagnostic-Id":    diagnosticID,
+				var message map[string]interface{}
+				if contentType != "" {
+					sbMessage.ContentType = contentType
+				}
+				if correlationID != "" {
+					sbMessage.CorrelationID = correlationID
+				}
+				sbMessage.Label = label
+
+				if body != "" {
+					err := json.Unmarshal([]byte(body), &message)
+					if err != nil {
+						logger.Error(err.Error())
+						os.Exit(1)
 					}
 				} else {
-					label = topic
-					properties = map[string]interface{}{
-						"Serialization": "1",
-						"TenantId":      tenantID,
+					logger.LogHighlight("Missing message body, use %v='{\"example\": \"object\"}' or any json body, you can also send a message object from a file using the --file option", log.Info, "--body", "--default")
+					help.PrintTopicSendCommandHelper()
+					os.Exit(0)
+				}
+				sbMessage.Data = message
+				var properties map[string]interface{}
+				if len(propertiesFlags) > 0 {
+					if properties == nil {
+						properties = make(map[string]interface{})
+					}
+					for _, property := range propertiesFlags {
+						key, value := helper.MapFlagValue(property)
+						if key != "" && value != "" {
+							properties[key] = value
+						}
 					}
 				}
-			}
-			if len(propertiesFlags) > 0 {
-				if properties == nil {
-					properties = make(map[string]interface{})
-				}
-				for _, property := range propertiesFlags {
-					key, value := helper.MapFlagValue(property)
-					if key != "" && value != "" {
-						properties[key] = value
-					}
-				}
+				sbMessage.UserProperties = properties
 			}
 
 			sbcli := servicebus.NewCli(connStr)
-			sbcli.SendTopicMessage(topic, message, label, properties)
+			sbcli.SendTopicMessage(topic, sbMessage)
 		default:
 			logger.LogHighlight("Invalid command argument %v, please choose a valid argument", log.Info, command)
 			help.PrintTopicMainCommandHelper()
@@ -468,82 +450,65 @@ func main() {
 				os.Exit(0)
 			}
 			queue := helper.GetFlagValue("queue", "")
-			tenantID := helper.GetFlagValue("tenant", "11111111-1111-1111-1111-555555550001")
-			useDefault := helper.GetFlagSwitch("default", false)
-			unoFormat := helper.GetFlagSwitch("uno", false)
 			body := helper.GetFlagValue("body", "")
 			label := helper.GetFlagValue("label", "ServiceBus.Tools")
-			name := helper.GetFlagValue("name", "")
-			domain := helper.GetFlagValue("domain", "")
-			sender := helper.GetFlagValue("sender", "ServiceBus.Tools")
-			version := helper.GetFlagValue("version", "1.0")
+			filePath := helper.GetFlagValue("file", "")
+			correlationID := helper.GetFlagValue("correlationID", "")
+			contentType := helper.GetFlagValue("contentType", "")
 			propertiesFlags := helper.GetFlagArrayValue("property")
 
 			if queue == "" {
-				logger.Error("Missing queue name mandatory argument --name")
+				logger.LogHighlight("Missing queue name mandatory argument %v", log.Error, "--name")
 				help.PrintQueueSendCommandHelper()
 				os.Exit(0)
 			}
 
-			var message map[string]interface{}
-			if useDefault && body == "" {
-				if !unoFormat {
-					domain = "TimeService"
-					name = "TimePassed"
-				} else {
-					domain = ""
-					name = ""
-				}
-				message = map[string]interface{}{
-					"Timestamp": time.Now().Format("2006-01-02T15:04:05.00000000-07:00"),
-					"TheTime":   time.Now().Format("2006-01-02T15:04:05"),
-				}
-			} else if body != "" {
-				err := json.Unmarshal([]byte(body), &message)
+			sbMessage := entities.MessageRequest{}
+			if filePath != "" {
+				err := sbMessage.FromFile(filePath)
 				if err != nil {
 					logger.Error(err.Error())
 					os.Exit(1)
 				}
 			} else {
-				logger.LogHighlight("Missing message body, use %v='{\"example\": \"object\"}' or use the %v flag, this will generate a TimeService sample message", log.Error, "--body", "--default")
-				help.PrintTopicSendCommandHelper()
-				os.Exit(0)
-			}
-			var properties map[string]interface{}
-			if len(propertiesFlags) == 0 || useDefault {
-				if domain != "" && name != "" {
-					label = domain + "." + name
-					diagnosticID := xid.New().String()
-					properties = map[string]interface{}{
-						"X-MsgTypeVersion": version,
-						"X-MsgDomain":      domain,
-						"X-MsgName":        name,
-						"X-Sender":         sender,
-						"X-TenantId":       tenantID,
-						"Diagnostic-Id":    diagnosticID,
+				var message map[string]interface{}
+				if contentType != "" {
+					sbMessage.ContentType = contentType
+				}
+				if correlationID != "" {
+					sbMessage.CorrelationID = correlationID
+				}
+				sbMessage.Label = label
+
+				if body != "" {
+					err := json.Unmarshal([]byte(body), &message)
+					if err != nil {
+						logger.Error(err.Error())
+						os.Exit(1)
 					}
 				} else {
-					label = queue
-					properties = map[string]interface{}{
-						"Serialization": "1",
-						"TenantId":      tenantID,
+					logger.LogHighlight("Missing message body, use %v='{\"example\": \"object\"}' or any json body, you can also send a message object from a file using the --file option", log.Info, "--body", "--default")
+					help.PrintTopicSendCommandHelper()
+					os.Exit(0)
+				}
+				sbMessage.Data = message
+				var properties map[string]interface{}
+				if len(propertiesFlags) > 0 {
+					if properties == nil {
+						properties = make(map[string]interface{})
+					}
+					for _, property := range propertiesFlags {
+						key, value := helper.MapFlagValue(property)
+						if key != "" && value != "" {
+							properties[key] = value
+						}
 					}
 				}
-			}
-			if len(propertiesFlags) > 0 {
-				if properties == nil {
-					properties = make(map[string]interface{})
-				}
-				for _, property := range propertiesFlags {
-					key, value := helper.MapFlagValue(property)
-					if key != "" && value != "" {
-						properties[key] = value
-					}
-				}
+				sbMessage.UserProperties = properties
 			}
 
 			sbcli := servicebus.NewCli(connStr)
-			sbcli.SendQueueMessage(queue, message, label, properties)
+			sbcli.SendQueueMessage(queue, sbMessage)
 
 		default:
 			logger.LogHighlight("Invalid command argument %v, please choose a valid argument", log.Error, command)

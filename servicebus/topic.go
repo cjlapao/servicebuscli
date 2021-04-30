@@ -2,13 +2,13 @@ package servicebus
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"os"
 	"time"
 
 	servicebus "github.com/Azure/azure-service-bus-go"
 	"github.com/cjlapao/common-go/log"
+	"github.com/cjlapao/servicebuscli-go/entities"
 )
 
 // GetTopicManager creates a servicebus topic manager
@@ -88,7 +88,7 @@ func (s *ServiceBusCli) ListTopics() ([]*servicebus.TopicEntity, error) {
 }
 
 // SendTopicMessage sends a message to a specific topic
-func (s *ServiceBusCli) SendTopicMessage(topicName string, message map[string]interface{}, label string, userParameters map[string]interface{}) error {
+func (s *ServiceBusCli) SendTopicMessage(topicName string, message entities.MessageRequest) error {
 	var commonError error
 	logger.LogHighlight("Sending a service bus topic message to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
 	if topicName == "" {
@@ -107,31 +107,23 @@ func (s *ServiceBusCli) SendTopicMessage(topicName string, message map[string]in
 		return commonError
 	}
 
-	messageData, err := json.MarshalIndent(message, "", "  ")
+	sbMessage, err := message.ToServiceBus()
+
 	if err != nil {
 		logger.Error(err.Error())
 		return err
 	}
 
-	sbMessage := servicebus.Message{
-		Data:           messageData,
-		UserProperties: userParameters,
-	}
-
-	if label != "" {
-		sbMessage.Label = label
-	}
-
-	err = topic.Send(ctx, &sbMessage)
+	err = topic.Send(ctx, sbMessage)
 
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return err
 	}
 
 	logger.LogHighlight("Service bus topic message was sent successfully to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
-	logger.Info("Message:")
-	logger.Info(string(messageData))
+	logger.Info("Message Body:")
+	logger.Info(string(sbMessage.Data))
 	return nil
 }
 
