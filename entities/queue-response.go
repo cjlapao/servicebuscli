@@ -4,7 +4,7 @@ import (
 	"time"
 
 	servicebus "github.com/Azure/azure-service-bus-go"
-	"github.com/cjlapao/servicebuscli-go/duration"
+	"github.com/cjlapao/common-go/duration"
 )
 
 // QueueResponse

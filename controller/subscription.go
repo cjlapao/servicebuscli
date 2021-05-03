@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// GetTopicSubscriptions Gets All the subscriptions from a topic in the current namespace
+// GetTopicSubscriptions Gets all of the subscriptions from a topic in the current namespace
 func (c *Controller) GetTopicSubscriptions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -205,7 +205,7 @@ func (c *Controller) UpsertTopicSubscription(w http.ResponseWriter, r *http.Requ
 	json.NewEncoder(w).Encode(response)
 }
 
-// DeleteTopicSubscription Deletes subscription from a topic in the namespace
+// DeleteTopicSubscription Deletes subscription from a topic in the current namespace
 func (c *Controller) DeleteTopicSubscription(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -272,7 +272,7 @@ func (c *Controller) DeleteTopicSubscription(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusAccepted)
 }
 
-// GetSubscriptionMessages Gets messages from a topic subscription
+// GetSubscriptionMessages Gets messages from a subscription in a topic in the current namespace
 func (c *Controller) GetSubscriptionMessages(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -344,7 +344,7 @@ func (c *Controller) GetSubscriptionMessages(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// GetSubscriptionMessages Gets messages from a topic subscription
+// GetSubscriptionMessages Gets dead letters from a subscription in a topic in the current namespace
 func (c *Controller) GetSubscriptionDeadLetterMessages(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]

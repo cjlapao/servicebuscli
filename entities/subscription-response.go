@@ -4,36 +4,43 @@ import (
 	"time"
 
 	azservicebus "github.com/Azure/azure-service-bus-go"
+	"github.com/cjlapao/common-go/duration"
 )
 
 type SubscriptionResponse struct {
-	Name                                      string       `json:"name"`
-	ID                                        string       `json:"url"`
-	CountDetails                              CountDetails `json:"countDetails"`
-	LockDuration                              *string      `json:"lockDuration"`
-	RequiresSession                           *bool        `json:"requiresSession"`
-	DefaultMessageTimeToLive                  *string      `json:"defaultMessageTimeToLive"`
-	DeadLetteringOnMessageExpiration          *bool        `json:"deadLetteringOnMessageExpiration"`
-	DeadLetteringOnFilterEvaluationExceptions *bool        `json:"deadLetteringOnFilterEvaluationExceptions"`
-	MessageCount                              *int64       `json:"messageCount"`
-	MaxDeliveryCount                          *int32       `json:"maxDeliveryCount"`
-	EnableBatchedOperations                   *bool        `json:"enableBatchedOperations"`
-	Status                                    string       `json:"status"`
-	CreatedAt                                 time.Time    `json:"createdAt"`
-	UpdatedAt                                 time.Time    `json:"updatedAt"`
-	AccessedAt                                time.Time    `json:"accessedAt"`
-	ForwardTo                                 *string      `json:"forwardTo"`
-	ForwardDeadLetteredMessagesTo             *string      `json:"forwardDeadLetteredMessagesTo"`
+	Name                                      string            `json:"name"`
+	ID                                        string            `json:"url"`
+	CountDetails                              CountDetails      `json:"countDetails"`
+	LockDuration                              duration.Duration `json:"lockDuration"`
+	RequiresSession                           *bool             `json:"requiresSession"`
+	DefaultMessageTimeToLive                  duration.Duration `json:"defaultMessageTimeToLive"`
+	AutoDeleteOnIdle                          duration.Duration `json:"autoDeleteOnIdle"`
+	DeadLetteringOnMessageExpiration          *bool             `json:"deadLetteringOnMessageExpiration"`
+	DeadLetteringOnFilterEvaluationExceptions *bool             `json:"deadLetteringOnFilterEvaluationExceptions"`
+	MessageCount                              *int64            `json:"messageCount"`
+	MaxDeliveryCount                          int64             `json:"maxDeliveryCount"`
+	EnableBatchedOperations                   *bool             `json:"enableBatchedOperations"`
+	Status                                    string            `json:"status"`
+	CreatedAt                                 time.Time         `json:"createdAt"`
+	UpdatedAt                                 time.Time         `json:"updatedAt"`
+	AccessedAt                                time.Time         `json:"accessedAt"`
+	ForwardTo                                 *string           `json:"forwardTo"`
+	ForwardDeadLetteredMessagesTo             *string           `json:"forwardDeadLetteredMessagesTo"`
 }
 
 func (e *SubscriptionResponse) FromServiceBus(subscription *azservicebus.SubscriptionEntity) {
-	e.LockDuration = subscription.LockDuration
+	lockDuration, _ := duration.FromString(*subscription.LockDuration)
+	defaultMessageTimeToLive, _ := duration.FromString(*subscription.DefaultMessageTimeToLive)
+	autoDeleteOnIdle, _ := duration.FromString(*subscription.AutoDeleteOnIdle)
+
+	e.LockDuration = *lockDuration
 	e.RequiresSession = subscription.RequiresSession
-	e.DefaultMessageTimeToLive = subscription.DefaultMessageTimeToLive
+	e.AutoDeleteOnIdle = *autoDeleteOnIdle
+	e.DefaultMessageTimeToLive = *defaultMessageTimeToLive
 	e.DeadLetteringOnMessageExpiration = subscription.DeadLetteringOnMessageExpiration
 	e.DeadLetteringOnFilterEvaluationExceptions = subscription.DeadLetteringOnFilterEvaluationExceptions
 	e.MessageCount = subscription.MessageCount
-	e.MaxDeliveryCount = subscription.MaxDeliveryCount
+	e.MaxDeliveryCount = int64(*subscription.MaxDeliveryCount)
 	e.EnableBatchedOperations = subscription.EnableBatchedOperations
 	e.Status = string(*subscription.Status)
 	e.CreatedAt = subscription.CreatedAt.Time
