@@ -1,0 +1,2545 @@
+{
+	"info": {
+		"_postman_id": "3509c1b1-2eda-4979-ac09-e65fc2e414cb",
+		"name": "ServiceBus Client",
+		"description": "This API will allow you do manage your service bus Queues/Topics/Subscriptions CURD operations as well as reading or peeking messages or dead letters in them.\n\nThe objective of this is to help developers to test their message handlers more effectively and faster allowing to mock messages and peek results",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Topics",
+			"item": [
+				{
+					"name": "Subscriptions",
+					"item": [
+						{
+							"name": "Get All Subscriptions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/subscriptions",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"subscriptions"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:34 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "753"
+										}
+									],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"bar\",\n        \"url\": \"https://foo.servicebus.windows.net/temp.topic/subscriptions/bar?api-version=2017-04\",\n        \"countDetails\": {\n            \"activeMessageCount\": 3,\n            \"deadLetterMessageCount\": 0,\n            \"scheduledMessageCount\": 0,\n            \"transferDeadLetterMessageCount\": 0,\n            \"transferMessageCount\": 0\n        },\n        \"lockDuration\": \"PT1M\",\n        \"requiresSession\": false,\n        \"defaultMessageTimeToLive\": \"P10675199DT2H48M5.4775807S\",\n        \"deadLetteringOnMessageExpiration\": false,\n        \"deadLetteringOnFilterEvaluationExceptions\": false,\n        \"messageCount\": 3,\n        \"maxDeliveryCount\": 10,\n        \"enableBatchedOperations\": false,\n        \"status\": \"Active\",\n        \"createdAt\": \"2021-04-29T08:47:54.7222311Z\",\n        \"updatedAt\": \"2021-04-29T08:47:54.7222311Z\",\n        \"accessedAt\": \"2021-04-29T08:50:34.807Z\",\n        \"forwardTo\": null,\n        \"forwardDeadLetteredMessagesTo\": null\n    }\n]"
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								},
+								{
+									"name": "NotFound Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 404,\n    \"error\": \"Topic not found\",\n    \"message\": \"The Topic bar was not found in the service bus foo\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Create Subscription",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"foo\",\r\n    \"maxDeliveryCount\": 15,\r\n    \"forward\": {\r\n        \"to\": \"otherTopic\",\r\n        \"in\": \"Topic\"\r\n    },\r\n    \"forwardDeadLetter\": {\r\n        \"to\": \"otherQueue\",\r\n        \"in\": \"Queue\"\r\n    },\r\n    \"rules\": [\r\n        {\r\n            \"name\": \"example_rule\",\r\n            \"sqlFilter\": \"2=2\",\r\n            \"sqlAction\": \"SET A='one'\"\r\n        }\r\n    ],    \r\n    \"options\": {\r\n        \"autoDeleteOnIdle\": \"24h\",\r\n        \"defaultMessageTimeToLive\": \"24h\",\r\n        \"lockDuration\": \"30s\",\r\n        \"enableBatchedOperation\": true,\r\n        \"deadLetteringOnMessageExpiration\": false,\r\n        \"requireSession\": false\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/subscriptions",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"subscriptions"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"name\": \"foo\",\r\n    \"maxDeliveryCount\": 15,\r\n    \"forward\": {\r\n        \"to\": \"temp.topic2\",\r\n        \"in\": \"Topic\"\r\n    },\r\n    \"forwardDeadLetter\": {\r\n        \"to\": \"foo\",\r\n        \"in\": \"Queue\"\r\n    },\r\n    \"rules\": [\r\n        {\r\n            \"name\": \"example_rule\",\r\n            \"sqlFilter\": \"2=2\",\r\n            \"sqlAction\": \"SET A='one'\"\r\n        }\r\n    ],\r\n    \"options\": {\r\n        \"autoDeleteOnIdle\": \"24h\",\r\n        \"defaultMessageTimeToLive\": \"24h\",\r\n        \"lockDuration\": \"30s\",\r\n        \"enableBatchedOperation\": true,\r\n        \"deadLetteringOnMessageExpiration\": false,\r\n        \"requireSession\": false\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Created",
+									"code": 201,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:59:55 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "716"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"bar\",\n    \"url\": \"sb://foo.servicebus.windows.net/temp.topic/subscriptions/bar?api-version=2017-04\",\n    \"countDetails\": {\n        \"activeMessageCount\": 0,\n        \"deadLetterMessageCount\": 0,\n        \"scheduledMessageCount\": 0,\n        \"transferDeadLetterMessageCount\": 0,\n        \"transferMessageCount\": 0\n    },\n    \"lockDuration\": \"PT30S\",\n    \"requiresSession\": false,\n    \"defaultMessageTimeToLive\": \"P1D\",\n    \"deadLetteringOnMessageExpiration\": false,\n    \"deadLetteringOnFilterEvaluationExceptions\": true,\n    \"messageCount\": 0,\n    \"maxDeliveryCount\": 10,\n    \"enableBatchedOperations\": true,\n    \"status\": \"Active\",\n    \"createdAt\": \"2021-04-30T07:59:55.0122186Z\",\n    \"updatedAt\": \"2021-04-30T07:59:55.0122186Z\",\n    \"accessedAt\": \"2021-04-30T07:59:55.013Z\",\n    \"forwardTo\": null,\n    \"forwardDeadLetteredMessagesTo\": null\n}"
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"name\": \"foo\",\r\n    \"maxDeliveryCount\": 15,\r\n    \"forward\": {\r\n        \"to\": \"temp.topic2\",\r\n        \"in\": \"Topic\"\r\n    },\r\n    \"forwardDeadLetter\": {\r\n        \"to\": \"foo\",\r\n        \"in\": \"Queue\"\r\n    },\r\n    \"rules\": [\r\n        {\r\n            \"name\": \"example_rule\",\r\n            \"sqlFilter\": \"2=2\",\r\n            \"sqlAction\": \"SET A='one'\"\r\n        }\r\n    ],\r\n    \"options\": {\r\n        \"autoDeleteOnIdle\": \"24h\",\r\n        \"defaultMessageTimeToLive\": \"1d\",\r\n        \"lockDuration\": \"30s\",\r\n        \"enableBatchedOperation\": true,\r\n        \"deadLetteringOnMessageExpiration\": false,\r\n        \"requireSession\": false\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 08:24:58 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "127"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Subscription",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"{{subscriptionName}}"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:34 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "753"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"bar\",\n    \"url\": \"https://foo.servicebus.windows.net/temp.topic/subscriptions/bar?api-version=2017-04\",\n    \"countDetails\": {\n        \"activeMessageCount\": 3,\n        \"deadLetterMessageCount\": 0,\n        \"scheduledMessageCount\": 0,\n        \"transferDeadLetterMessageCount\": 0,\n        \"transferMessageCount\": 0\n    },\n    \"lockDuration\": \"PT1M\",\n    \"requiresSession\": false,\n    \"defaultMessageTimeToLive\": \"P10675199DT2H48M5.4775807S\",\n    \"deadLetteringOnMessageExpiration\": false,\n    \"deadLetteringOnFilterEvaluationExceptions\": false,\n    \"messageCount\": 3,\n    \"maxDeliveryCount\": 10,\n    \"enableBatchedOperations\": false,\n    \"status\": \"Active\",\n    \"createdAt\": \"2021-04-29T08:47:54.7222311Z\",\n    \"updatedAt\": \"2021-04-29T08:47:54.7222311Z\",\n    \"accessedAt\": \"2021-04-29T08:50:34.807Z\",\n    \"forwardTo\": null,\n    \"forwardDeadLetteredMessagesTo\": null\n}"
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								},
+								{
+									"name": "NotFound Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 404,\n    \"error\": \"Topic not found\",\n    \"message\": \"The Topic bar was not found in the service bus foo\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Delete Subscription",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}1",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"{{subscriptionName}}1"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/foo",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"foo"
+											]
+										}
+									},
+									"status": "Accepted",
+									"code": 202,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 09:00:05 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "0"
+										}
+									],
+									"cookie": [],
+									"body": null
+								},
+								{
+									"name": "NotFound Result",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"{{subscriptionName}}"
+											]
+										}
+									},
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 08:28:52 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "155"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 404,\n    \"error\": \"Subscription not found\",\n    \"message\": \"The Subscription bar was not found on topic foo in the service bus foo\"\n}"
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"name\": \"foo\",\r\n    \"maxDeliveryCount\": 15,\r\n    \"forward\": {\r\n        \"to\": \"temp.topic2\",\r\n        \"in\": \"Topic\"\r\n    },\r\n    \"forwardDeadLetter\": {\r\n        \"to\": \"foo\",\r\n        \"in\": \"Queue\"\r\n    },\r\n    \"rules\": [\r\n        {\r\n            \"name\": \"example_rule\",\r\n            \"sqlFilter\": \"2=2\",\r\n            \"sqlAction\": \"SET A='one'\"\r\n        }\r\n    ],\r\n    \"options\": {\r\n        \"autoDeleteOnIdle\": \"24h\",\r\n        \"defaultMessageTimeToLive\": \"1d\",\r\n        \"lockDuration\": \"30s\",\r\n        \"enableBatchedOperation\": true,\r\n        \"deadLetteringOnMessageExpiration\": false,\r\n        \"requireSession\": false\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 08:24:58 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "127"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Get All Subscription Rules",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/rules",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"{{subscriptionName}}",
+										"rules"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/rules",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"{{subscriptionName}}",
+												"rules"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 09:07:50 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "491"
+										}
+									],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"$Default\",\n        \"id\": \"https://foo.servicebus.windows.net/temp.topic/subscriptions/wiretap/rules/$Default?api-version=2017-04\",\n        \"filter\": {\n            \"correlationID\": null,\n            \"messageID\": null,\n            \"to\": null,\n            \"replyTo\": null,\n            \"label\": null,\n            \"sessionID\": null,\n            \"replyToSessionID\": null,\n            \"contentType\": null,\n            \"properties\": null,\n            \"type\": \"SqlFilter\",\n            \"sqlExpression\": \"1=1\",\n            \"compatibilityLevel\": 20\n        },\n        \"action\": {\n            \"type\": \"EmptyRuleAction\",\n            \"requiresPreprocessing\": false,\n            \"sqlExpression\": \"\",\n            \"compatibilityLevel\": 0\n        }\n    }\n]"
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Create Subscription Rule",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"example_rule\",\r\n    \"sqlFilter\": \"2=2\",\r\n    \"sqlAction\": \"SET A='one'\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/rules",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"{{subscriptionName}}",
+										"rules"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"name\": \"foo\",\r\n    \"maxDeliveryCount\": 15,\r\n    \"forward\": {\r\n        \"to\": \"temp.topic2\",\r\n        \"in\": \"Topic\"\r\n    },\r\n    \"forwardDeadLetter\": {\r\n        \"to\": \"foo\",\r\n        \"in\": \"Queue\"\r\n    },\r\n    \"rules\": [\r\n        {\r\n            \"name\": \"example_rule\",\r\n            \"sqlFilter\": \"2=2\",\r\n            \"sqlAction\": \"SET A='one'\"\r\n        }\r\n    ],\r\n    \"options\": {\r\n        \"autoDeleteOnIdle\": \"24h\",\r\n        \"defaultMessageTimeToLive\": \"1d\",\r\n        \"lockDuration\": \"30s\",\r\n        \"enableBatchedOperation\": true,\r\n        \"deadLetteringOnMessageExpiration\": false,\r\n        \"requireSession\": false\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 08:24:58 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "127"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								},
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"name\": \"example_rule1\",\r\n    \"sqlFilter\": \"2=2\",\r\n    \"sqlAction\": \"SET A='one'\"\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/rules",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"{{subscriptionName}}",
+												"rules"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 13:32:05 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "509"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"bar\",\n    \"id\": \"https://foo.servicebus.windows.net/temp.topic/subscriptions/example/rules/example_rule1?api-version=2017-04\",\n    \"filter\": {\n        \"correlationID\": null,\n        \"messageID\": null,\n        \"to\": null,\n        \"replyTo\": null,\n        \"label\": null,\n        \"sessionID\": null,\n        \"replyToSessionID\": null,\n        \"contentType\": null,\n        \"properties\": null,\n        \"type\": \"SqlFilter\",\n        \"sqlExpression\": \"2=2\",\n        \"compatibilityLevel\": 20\n    },\n    \"action\": {\n        \"type\": \"SqlRuleAction\",\n        \"requiresPreprocessing\": false,\n        \"sqlExpression\": \"SET A='one'\",\n        \"compatibilityLevel\": 20\n    }\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Subscription Rule",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/rules/{{subscriptionRuleName}}",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"{{subscriptionName}}",
+										"rules",
+										"{{subscriptionRuleName}}"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/rules/{{subscriptionRuleName}}",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"{{subscriptionName}}",
+												"rules",
+												"{{subscriptionRuleName}}"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 09:15:49 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "489"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"$Default\",\n    \"id\": \"https://sb-defaul-0x0-4172098119.servicebus.windows.net/temp.topic/subscriptions/wiretap/rules/$Default?api-version=2017-04\",\n    \"filter\": {\n        \"correlationID\": null,\n        \"messageID\": null,\n        \"to\": null,\n        \"replyTo\": null,\n        \"label\": null,\n        \"sessionID\": null,\n        \"replyToSessionID\": null,\n        \"contentType\": null,\n        \"properties\": null,\n        \"type\": \"SqlFilter\",\n        \"sqlExpression\": \"1=1\",\n        \"compatibilityLevel\": 20\n    },\n    \"action\": {\n        \"type\": \"EmptyRuleAction\",\n        \"requiresPreprocessing\": false,\n        \"sqlExpression\": \"\",\n        \"compatibilityLevel\": 0\n    }\n}"
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								},
+								{
+									"name": "NotFound Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 404,\n    \"error\": \"Topic not found\",\n    \"message\": \"The Topic bar was not found in the service bus foo\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Delete Subscription Rule",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/rules/{{subscriptionRuleName}}",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"{{subscriptionName}}",
+										"rules",
+										"{{subscriptionRuleName}}"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/rules/example_rule1",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"{{subscriptionName}}",
+												"rules",
+												"example_rule1"
+											]
+										}
+									},
+									"status": "Accepted",
+									"code": 202,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 14:08:38 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "0"
+										}
+									],
+									"cookie": [],
+									"body": null
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								},
+								{
+									"name": "NotFound Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/er/subscriptions",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"er",
+												"subscriptions"
+											]
+										}
+									},
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 07:07:59 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "122"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 404,\n    \"error\": \"Topic not found\",\n    \"message\": \"The Topic bar was not found in the service bus foo\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Subscription Messages",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/messages?qty=10&peek=true",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"{{subscriptionName}}",
+										"messages"
+									],
+									"query": [
+										{
+											"key": "qty",
+											"value": "10",
+											"description": "Quantity of messages to return"
+										},
+										{
+											"key": "peek",
+											"value": "true",
+											"description": "Should it only peek the messages?"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"queues",
+												"{{queueName}}",
+												"send"
+											]
+										}
+									},
+									"status": "Accepted",
+									"code": 202,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Thu, 29 Apr 2021 15:19:17 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "88"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"Message example was sent successfully to foo queue\",\n    \"data\": {\n        \"key\": \"value\"\n    }\n}"
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"queues",
+												"{{queueName}}",
+												"send"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "120"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Subscription Dead Letters",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/deadletters?qty=10&peek=true",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"topics",
+										"{{topicName}}",
+										"{{subscriptionName}}",
+										"deadletters"
+									],
+									"query": [
+										{
+											"key": "qty",
+											"value": "10",
+											"description": "Quantity of messages to return"
+										},
+										{
+											"key": "peek",
+											"value": "true",
+											"description": "Should it only peek the messages?"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Ok Result",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"queues",
+												"{{queueName}}",
+												"send"
+											]
+										}
+									},
+									"status": "Accepted",
+									"code": 202,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Thu, 29 Apr 2021 15:19:17 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "88"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"Message example was sent successfully to foo queue\",\n    \"data\": {\n        \"key\": \"value\"\n    }\n}"
+								},
+								{
+									"name": "Error Result",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"queues",
+												"{{queueName}}",
+												"send"
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "120"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+								},
+								{
+									"name": "NoContent Result",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/{{subscriptionName}}/deadletters?qty=10&peek=true",
+											"protocol": "{{protocol}}",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"topics",
+												"{{topicName}}",
+												"{{subscriptionName}}",
+												"deadletters"
+											],
+											"query": [
+												{
+													"key": "qty",
+													"value": "10",
+													"description": "Quantity of messages to return"
+												},
+												{
+													"key": "peek",
+													"value": "true",
+													"description": "Should it only peek the messages?"
+												}
+											]
+										}
+									},
+									"status": "No Content",
+									"code": 204,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 30 Apr 2021 14:21:18 GMT"
+										}
+									],
+									"cookie": [],
+									"body": null
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Get All Topics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{url}}/topics",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"topics"
+							]
+						},
+						"description": "This will list all the topics in a specific namespace"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Topic",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{url}}/topics/{{topicName}}",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"topics",
+								"{{topicName}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Topic",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:10000/topics/example",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "10000",
+									"path": [
+										"topics",
+										"example"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": null,
+							"cookie": [],
+							"body": "{\n    \"name\": \"example\",\n    \"id\": \"https://example.servicebus.windows.net/example?api-version=2017-04\",\n    \"countDetails\": {\n        \"activeMessageCount\": 0,\n        \"deadLetterMessageCount\": 0,\n        \"scheduledMessageCount\": 0,\n        \"transferDeadLetterMessageCount\": 0,\n        \"transferMessageCount\": 0\n    },\n    \"defaultMessageTimeToLive\": \"P10675199DT2H48M5.4775807S\",\n    \"maxSizeInMegabytes\": 1024,\n    \"requiresDuplicateDetection\": false,\n    \"duplicateDetectionHistoryTimeWindow\": \"PT10M\",\n    \"enableBatchedOperations\": false,\n    \"sizeInBytes\": 0,\n    \"filteringMessagesBeforePublishing\": false,\n    \"isAnonymousAccessible\": false,\n    \"status\": \"Active\",\n    \"createdAt\": \"2021-04-13T16:22:28.713Z\",\n    \"updatedAt\": \"2021-04-13T16:26:44.537Z\",\n    \"supportOrdering\": false,\n    \"autoDeleteOnIdle\": \"P10675199DT2H48M5.4775807S\",\n    \"enablePartitioning\": false,\n    \"enableSubscriptionPartitioning\": false,\n    \"enableExpress\": false\n}"
+						}
+					]
+				},
+				{
+					"name": "Send Topic Message",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/send",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"topics",
+								"{{topicName}}",
+								"send"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:19:17 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "88"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Message example was sent successfully to foo queue\",\n    \"data\": {\n        \"key\": \"value\"\n    }\n}"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "120"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+						}
+					]
+				}
+			],
+			"description": "CURD operations in topics for a specific namespace controlled by the API"
+		},
+		{
+			"name": "Queues",
+			"item": [
+				{
+					"name": "Get All Queues",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{url}}/queues",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"queues"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "OK Result",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 13:21:07 GMT"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"example1\",\n        \"id\": \"\",\n        \"countDetails\": {\n            \"activeMessageCount\": 0,\n            \"deadLetterMessageCount\": 0,\n            \"scheduledMessageCount\": 0,\n            \"transferDeadLetterMessageCount\": 0,\n            \"transferMessageCount\": 0\n        },\n        \"lockDuration\": {\n            \"Years\": 0,\n            \"Weeks\": 0,\n            \"Days\": 0,\n            \"Hours\": 0,\n            \"Minutes\": 5,\n            \"Seconds\": 0,\n            \"MilliSeconds\": 0\n        },\n        \"maxSizeInMegabytes\": 1024,\n        \"requiresDuplicateDetection\": false,\n        \"requiresSession\": false,\n        \"defaultMessageTimeToLive\": {\n            \"Years\": 0,\n            \"Weeks\": 0,\n            \"Days\": 10675199,\n            \"Hours\": 2,\n            \"Minutes\": 48,\n            \"Seconds\": 5,\n            \"MilliSeconds\": 477\n        },\n        \"deadLetteringOnMessageExpiration\": false,\n        \"duplicateDetectionHistoryTimeWindow\": {\n            \"Years\": 0,\n            \"Weeks\": 0,\n            \"Days\": 0,\n            \"Hours\": 0,\n            \"Minutes\": 10,\n            \"Seconds\": 0,\n            \"MilliSeconds\": 0\n        },\n        \"maxDeliveryCount\": 10,\n        \"enableBatchedOperations\": true,\n        \"sizeInBytes\": 0,\n        \"messageCount\": null,\n        \"isAnonymousAccessible\": false,\n        \"status\": \"Active\",\n        \"createdAt\": \"2021-03-19T11:00:52.16Z\",\n        \"updatedAt\": \"2021-03-19T11:00:52.343Z\",\n        \"supportOrdering\": true,\n        \"autoDeleteOnIdle\": {\n            \"Years\": 0,\n            \"Weeks\": 0,\n            \"Days\": 10675199,\n            \"Hours\": 2,\n            \"Minutes\": 48,\n            \"Seconds\": 5,\n            \"MilliSeconds\": 477\n        },\n        \"enablePartitioning\": false,\n        \"enableExpress\": false,\n        \"forwardTo\": null,\n        \"forwardDeadLetteredMessagesTo\": null\n    },\n    {\n        \"name\": \"example2\",\n        \"id\": \"\",\n        \"countDetails\": {\n            \"activeMessageCount\": 0,\n            \"deadLetterMessageCount\": 0,\n            \"scheduledMessageCount\": 0,\n            \"transferDeadLetterMessageCount\": 0,\n            \"transferMessageCount\": 0\n        },\n        \"lockDuration\": {\n            \"Years\": 0,\n            \"Weeks\": 0,\n            \"Days\": 0,\n            \"Hours\": 0,\n            \"Minutes\": 5,\n            \"Seconds\": 0,\n            \"MilliSeconds\": 0\n        },\n        \"maxSizeInMegabytes\": 1024,\n        \"requiresDuplicateDetection\": false,\n        \"requiresSession\": false,\n        \"defaultMessageTimeToLive\": {\n            \"Years\": 0,\n            \"Weeks\": 0,\n            \"Days\": 10675199,\n            \"Hours\": 2,\n            \"Minutes\": 48,\n            \"Seconds\": 5,\n            \"MilliSeconds\": 477\n        },\n        \"deadLetteringOnMessageExpiration\": false,\n        \"duplicateDetectionHistoryTimeWindow\": {\n            \"Years\": 0,\n            \"Weeks\": 0,\n            \"Days\": 0,\n            \"Hours\": 0,\n            \"Minutes\": 10,\n            \"Seconds\": 0,\n            \"MilliSeconds\": 0\n        },\n        \"maxDeliveryCount\": 10,\n        \"enableBatchedOperations\": true,\n        \"sizeInBytes\": 0,\n        \"messageCount\": null,\n        \"isAnonymousAccessible\": false,\n        \"status\": \"Active\",\n        \"createdAt\": \"2021-04-28T09:19:06.903Z\",\n        \"updatedAt\": \"2021-04-28T09:19:06.947Z\",\n        \"supportOrdering\": true,\n        \"autoDeleteOnIdle\": {\n            \"Years\": 0,\n            \"Weeks\": 0,\n            \"Days\": 10675199,\n            \"Hours\": 2,\n            \"Minutes\": 48,\n            \"Seconds\": 5,\n            \"MilliSeconds\": 477\n        },\n        \"enablePartitioning\": false,\n        \"enableExpress\": false,\n        \"forwardTo\": null,\n        \"forwardDeadLetteredMessagesTo\": null\n    }\n]"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 13:33:03 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "274"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Server Error\",\n    \"message\": \"Some error message\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Queue",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"foo\",\r\n    \"maxDeliveryCount\": 5,\r\n    \"forward\": {\r\n        \"to\": \"otherTopic\",\r\n        \"in\": \"Topic\"\r\n    },\r\n    \"forwardDeadLetter\": {\r\n        \"to\": \"otherQueue\",\r\n        \"in\": \"Queue\"\r\n    },\r\n    \"options\": {\r\n        \"autoDeleteOnIdle\": \"24h\",\r\n        \"enableDuplicateDetection\": \"30m\",\r\n        \"maxSizeInMegabytes\": 1024,\r\n        \"defaultMessageTimeToLive\": \"1h\",\r\n        \"lockDuration\": \"30s\",\r\n        \"supportOrdering\": true,\r\n        \"enablePartitioning\": true,\r\n        \"requireSession\": false,\r\n        \"deadLetteringOnMessageExpiration\": false\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{url}}/queues",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"queues"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"foo\",\r\n    \"maxDeliveryCount\": 5,\r\n    \"forward\": {\r\n        \"to\": \"otherTopic\",\r\n        \"in\": \"Topic\"\r\n    },\r\n    \"forwardDeadLetter\": {\r\n        \"to\": \"otherQueue\",\r\n        \"in\": \"Queue\"\r\n    },\r\n    \"options\": {\r\n        \"autoDeleteOnIdle\": \"24h\",\r\n        \"enableDuplicateDetection\": \"30m\",\r\n        \"maxSizeInMegabytes\": 10,\r\n        \"defaultMessageTimeToLive\": \"1h\",\r\n        \"lockDuration\": \"30s\",\r\n        \"supportOrdering\": true,\r\n        \"enablePartitioning\": true,\r\n        \"requireSession\": false,\r\n        \"deadLetteringOnMessageExpiration\": false\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 14:01:38 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "88"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Error Creating Queue\",\n    \"message\": \"some error message\"\n}"
+						},
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"foo1\",\r\n    \"maxDeliveryCount\": 5,\r\n    \"options\": {\r\n        \"autoDeleteOnIdle\": \"24h\",\r\n        \"enableDuplicateDetection\": \"30m\",\r\n        \"maxSizeInMegabytes\": 1024,\r\n        \"defaultMessageTimeToLive\": \"1h\",\r\n        \"lockDuration\": \"30s\",\r\n        \"supportOrdering\": true,\r\n        \"enablePartitioning\": true,\r\n        \"requireSession\": false,\r\n        \"deadLetteringOnMessageExpiration\": false\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 14:17:43 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1149"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"name\": \"bar\",\n    \"id\": \"https://foo.windows.net/bar?api-version=2017-04\",\n    \"countDetails\": {\n        \"activeMessageCount\": 0,\n        \"deadLetterMessageCount\": 0,\n        \"scheduledMessageCount\": 0,\n        \"transferDeadLetterMessageCount\": 0,\n        \"transferMessageCount\": 0\n    },\n    \"lockDuration\": {\n        \"Years\": 0,\n        \"Weeks\": 0,\n        \"Days\": 0,\n        \"Hours\": 0,\n        \"Minutes\": 0,\n        \"Seconds\": 0,\n        \"MilliSeconds\": 0\n    },\n    \"maxSizeInMegabytes\": 16384,\n    \"requiresDuplicateDetection\": true,\n    \"requiresSession\": false,\n    \"defaultMessageTimeToLive\": {\n        \"Years\": 0,\n        \"Weeks\": 0,\n        \"Days\": 0,\n        \"Hours\": 1,\n        \"Minutes\": 0,\n        \"Seconds\": 0,\n        \"MilliSeconds\": 0\n    },\n    \"deadLetteringOnMessageExpiration\": false,\n    \"duplicateDetectionHistoryTimeWindow\": {\n        \"Years\": 0,\n        \"Weeks\": 0,\n        \"Days\": 1,\n        \"Hours\": 0,\n        \"Minutes\": 0,\n        \"Seconds\": 0,\n        \"MilliSeconds\": 0\n    },\n    \"maxDeliveryCount\": 5,\n    \"enableBatchedOperations\": true,\n    \"sizeInBytes\": 0,\n    \"messageCount\": null,\n    \"isAnonymousAccessible\": false,\n    \"status\": \"Active\",\n    \"createdAt\": \"2021-04-29T14:17:42.503Z\",\n    \"updatedAt\": \"2021-04-29T14:17:42.62Z\",\n    \"supportOrdering\": false,\n    \"autoDeleteOnIdle\": {\n        \"Years\": 0,\n        \"Weeks\": 0,\n        \"Days\": 1,\n        \"Hours\": 0,\n        \"Minutes\": 0,\n        \"Seconds\": 0,\n        \"MilliSeconds\": 0\n    },\n    \"enablePartitioning\": true,\n    \"enableExpress\": false,\n    \"forwardTo\": null,\n    \"forwardDeadLetteredMessagesTo\": null\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Queue",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{url}}/queues/{{queueName}}",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"queues",
+								"{{queueName}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 13:30:06 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1266"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"name\": \"bar\",\n    \"id\": \"https://foo.windows.net/bar?api-version=2017-04\",\n    \"countDetails\": {\n        \"activeMessageCount\": 0,\n        \"deadLetterMessageCount\": 0,\n        \"scheduledMessageCount\": 0,\n        \"transferDeadLetterMessageCount\": 0,\n        \"transferMessageCount\": 0\n    },\n    \"lockDuration\": {\n        \"Years\": 0,\n        \"Weeks\": 0,\n        \"Days\": 0,\n        \"Hours\": 0,\n        \"Minutes\": 1,\n        \"Seconds\": 0,\n        \"MilliSeconds\": 0\n    },\n    \"maxSizeInMegabytes\": 5120,\n    \"requiresDuplicateDetection\": false,\n    \"requiresSession\": false,\n    \"defaultMessageTimeToLive\": {\n        \"Years\": 0,\n        \"Weeks\": 0,\n        \"Days\": 10675199,\n        \"Hours\": 2,\n        \"Minutes\": 48,\n        \"Seconds\": 5,\n        \"MilliSeconds\": 477\n    },\n    \"deadLetteringOnMessageExpiration\": false,\n    \"duplicateDetectionHistoryTimeWindow\": {\n        \"Years\": 0,\n        \"Weeks\": 0,\n        \"Days\": 0,\n        \"Hours\": 0,\n        \"Minutes\": 10,\n        \"Seconds\": 0,\n        \"MilliSeconds\": 0\n    },\n    \"maxDeliveryCount\": 10,\n    \"enableBatchedOperations\": true,\n    \"sizeInBytes\": 0,\n    \"messageCount\": null,\n    \"isAnonymousAccessible\": false,\n    \"status\": \"Active\",\n    \"createdAt\": \"2020-12-02T09:46:35.6735156Z\",\n    \"updatedAt\": \"2020-12-02T09:46:35.6735156Z\",\n    \"supportOrdering\": true,\n    \"autoDeleteOnIdle\": {\n        \"Years\": 0,\n        \"Weeks\": 0,\n        \"Days\": 10675199,\n        \"Hours\": 2,\n        \"Minutes\": 48,\n        \"Seconds\": 5,\n        \"MilliSeconds\": 477\n    },\n    \"enablePartitioning\": false,\n    \"enableExpress\": false,\n    \"forwardTo\": null,\n    \"forwardDeadLetteredMessagesTo\": null\n}"
+						},
+						{
+							"name": "NotFound Result",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 13:33:38 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "157"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 404,\n    \"error\": \"Queue Not Found\",\n    \"message\": \"Queue with name foo was not found in sb-defaul-0x0-4172098119\"\n}"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 13:36:45 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "304"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Server Error\",\n    \"message\": \"Some Error Message\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Queue",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{url}}/queues/{{queueName}}",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"queues",
+								"{{queueName}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "NotFound Result",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/foo1",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"foo1"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 14:28:42 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "116"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 404,\n    \"error\": \"Queue Not Found\",\n    \"message\": \"Queue with name foo123 was not found in sb-defaul-0x0-4172098119\"\n}"
+						},
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/foo",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"foo"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 14:34:03 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "0"
+								}
+							],
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Send Queue Message",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"queues",
+								"{{queueName}}",
+								"send"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:19:17 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "88"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Message example was sent successfully to foo queue\",\n    \"data\": {\n        \"key\": \"value\"\n    }\n}"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "120"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Queue Messages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/messages?qty=10&peek=true",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"queues",
+								"{{queueName}}",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "qty",
+									"value": "10",
+									"description": "Quantity of messages to return"
+								},
+								{
+									"key": "peek",
+									"value": "true",
+									"description": "Should it only peek the messages?"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/messages?qty=2&peek=true",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"messages"
+									],
+									"query": [
+										{
+											"key": "qty",
+											"value": "2",
+											"description": "Quantity of messages to return"
+										},
+										{
+											"key": "peek",
+											"value": "true",
+											"description": "Should it only peek the messages?"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 30 Apr 2021 06:29:51 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "372"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id\": \"51c65e9d-cec1-4ad4-9553-205c5fa48ee9\",\n        \"label\": \"example4\",\n        \"correlationId\": \"test\",\n        \"contentType\": \"application/json\",\n        \"data\": {\n            \"key\": \"value\"\n        },\n        \"userProperties\": {\n            \"name\": \"test message\"\n        }\n    },\n    {\n        \"id\": \"4d56b3e2-7fd8-4afb-9486-5d584c3f6874\",\n        \"label\": \"example3\",\n        \"correlationId\": \"test\",\n        \"contentType\": \"application/json\",\n        \"data\": {\n            \"key\": \"value\"\n        },\n        \"userProperties\": {\n            \"name\": \"test message\"\n        }\n    }\n]"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "120"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Queue Dead Letters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/deadletters?qty=10&peek=true",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"queues",
+								"{{queueName}}",
+								"deadletters"
+							],
+							"query": [
+								{
+									"key": "qty",
+									"value": "10",
+									"description": "Quantity of messages to return"
+								},
+								{
+									"key": "peek",
+									"value": "true",
+									"description": "Should it only peek the messages?"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:19:17 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "88"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Message example was sent successfully to foo queue\",\n    \"data\": {\n        \"key\": \"value\"\n    }\n}"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "120"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}

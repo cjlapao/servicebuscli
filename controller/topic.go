@@ -180,7 +180,7 @@ func (c *Controller) CreateTopic(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) SendTopicMessage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	topicName := vars["name"]
+	topicName := vars["topicName"]
 	reqBody, err := ioutil.ReadAll(r.Body)
 	errorResponse := entities.ApiErrorResponse{}
 
