@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	cjlog "github.com/cjlapao/common-go/log"
 	"github.com/cjlapao/common-go/version"
+	"github.com/cjlapao/servicebuscli-go/entities"
 	"github.com/cjlapao/servicebuscli-go/servicebus"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/parser"
@@ -98,6 +100,7 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.Use(ServiceBusConnectionMiddleware)
 	controller.Router.Use(commonMiddleware)
 	// Topics Controllers
+	controller.Router.HandleFunc("/config", controller.SetConnectionString).Methods("POST")
 	controller.Router.HandleFunc("/topics", controller.GetTopics).Methods("GET")
 	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("POST")
 	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("PUT")
@@ -127,4 +130,54 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.HandleFunc("/queues/{queueName}/messages", controller.GetQueueMessages).Methods("GET")
 
 	return controller
+}
+
+// GetTopics Gets all topics in the namespace
+func (c *Controller) SetConnectionString(w http.ResponseWriter, r *http.Request) {
+	reqBody, err := ioutil.ReadAll(r.Body)
+	errorResponse := entities.ApiErrorResponse{}
+
+	// Body cannot be null error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Empty Body"
+		errorResponse.Message = "The body of the request is null or empty"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	connection := entities.ConfigRequest{}
+	err = json.Unmarshal(reqBody, &connection)
+
+	// Body deserialization error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Failed Body Deserialization"
+		errorResponse.Message = "There was an error deserializing the body of the request"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+	if connection.ConnectionString == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Empty Connection String"
+		errorResponse.Message = "Connection string cannot be empty"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+	sbcli = servicebus.NewCli(connection.ConnectionString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Error Creating Topic"
+		errorResponse.Message = "There was an error creating topic"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	os.Setenv("SERVICEBUS_CONNECTION_STRING", connection.ConnectionString)
+	w.WriteHeader(http.StatusAccepted)
 }
