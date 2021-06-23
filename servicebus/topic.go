@@ -127,6 +127,47 @@ func (s *ServiceBusCli) SendTopicMessage(topicName string, message entities.Mess
 	return nil
 }
 
+func (s *ServiceBusCli) SendBulkTopicMessage(topicName string, messages ...entities.MessageRequest) error {
+	var commonError error
+	logger.LogHighlight("Sending a service bus topic messages to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
+	if topicName == "" {
+		commonError = errors.New("Topic cannot be null")
+		logger.Error(commonError.Error())
+		return commonError
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	topic := s.GetTopic(topicName)
+	if topic == nil {
+		commonError = errors.New("Could not find topic " + topicName + " in service bus " + s.Namespace.Name)
+		logger.LogHighlight("Could not find topic %v in service bus %v", log.Error, topicName, s.Namespace.Name)
+		return commonError
+	}
+
+	sbMessages := make([]*servicebus.Message, 0)
+	for _, msg := range messages {
+		sbMessage, err := msg.ToServiceBus()
+
+		if err != nil {
+			logger.Error(err.Error())
+			return err
+		}
+		sbMessages = append(sbMessages, sbMessage)
+	}
+
+	err := topic.SendBatch(ctx, servicebus.NewMessageBatchIterator(10485760, sbMessages...))
+
+	if err != nil {
+		logger.Error(err.Error())
+		return err
+	}
+
+	logger.LogHighlight("Service bus bulk topic messages were sent successfully to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
+	return nil
+}
+
 // SendTopicMessage sends a message to a specific topic
 func (s *ServiceBusCli) SendTopicServiceBusMessage(topicName string, sbMessage *servicebus.Message) error {
 	var commonError error

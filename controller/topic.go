@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -242,6 +243,63 @@ func (c *Controller) SendTopicMessage(w http.ResponseWriter, r *http.Request) {
 	response := entities.ApiSuccessResponse{
 		Message: "Message " + message.Label + " was sent successfully to " + topicName + " topic",
 		Data:    message.Data,
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (c *Controller) SendBulkTopicMessage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	topicName := vars["topicName"]
+	reqBody, err := ioutil.ReadAll(r.Body)
+	errorResponse := entities.ApiErrorResponse{}
+
+	// Topic Name cannot be nil
+	if topicName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Topic name is null"
+		errorResponse.Message = "Topic name cannot be null"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	// Body cannot be nil error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Empty Body"
+		errorResponse.Message = "The body of the request is null or empty"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	bulk := entities.BulkMessageRequest{}
+	err = json.Unmarshal(reqBody, &bulk)
+
+	// Body deserialization error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Failed Body Deserialization"
+		errorResponse.Message = "There was an error deserializing the body of the request"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	err = sbcli.SendBulkTopicMessage(topicName, bulk.Messages...)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Error Sending Topic Message"
+		errorResponse.Message = "There was an error sending bulk messages to topic " + topicName
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	response := entities.ApiSuccessResponse{
+		Message: "Sent " + fmt.Sprint(len(bulk.Messages)) + " Messages successfully to " + topicName + " topic",
 	}
 
 	w.WriteHeader(http.StatusAccepted)

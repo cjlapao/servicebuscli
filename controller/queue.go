@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -279,6 +280,63 @@ func (c *Controller) SendQueueMessage(w http.ResponseWriter, r *http.Request) {
 	response := entities.ApiSuccessResponse{
 		Message: "Message " + message.Label + " was sent successfully to " + queueName + " queue",
 		Data:    message.Data,
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(response)
+}
+
+// SendBulkQueueMessage Sends a Message to a Queue in the current namespace
+func (c *Controller) SendBulkQueueMessage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	queueName := vars["queueName"]
+	reqBody, err := ioutil.ReadAll(r.Body)
+	errorResponse := entities.ApiErrorResponse{}
+
+	if queueName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Server Error"
+		errorResponse.Message = "Queue name parameter cannot be null or empty"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	// Body cannot be nil error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Empty Body"
+		errorResponse.Message = "The body of the request is null or empty"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	bulk := entities.BulkMessageRequest{}
+	err = json.Unmarshal(reqBody, &bulk)
+
+	// Body deserialization error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Failed Body Deserialization"
+		errorResponse.Message = "There was an error deserializing the body of the request"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	err = sbcli.SendBulkQueueMessage(queueName, bulk.Messages...)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Error Sending Queue Message"
+		errorResponse.Message = "There was an error sending bulk messages to queue " + queueName
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	response := entities.ApiSuccessResponse{
+		Message: "Sent " + fmt.Sprint(len(bulk.Messages)) + " Messages successfully to " + queueName + " queue",
 	}
 
 	w.WriteHeader(http.StatusAccepted)

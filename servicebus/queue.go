@@ -243,6 +243,52 @@ func (s *ServiceBusCli) SendQueueMessage(queueName string, message entities.Mess
 	return nil
 }
 
+// SendQueueMessage Sends a Service Bus Message to a Queue
+func (s *ServiceBusCli) SendBulkQueueMessage(queueName string, messages ...entities.MessageRequest) error {
+	var commonError error
+	logger.LogHighlight("Sending a service bus queue messages to %v queue in service bus %v", log.Info, queueName, s.Namespace.Name)
+	if queueName == "" {
+		commonError = errors.New("queue cannot be null")
+		logger.Error(commonError.Error())
+		return commonError
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	queue, err := s.GetQueue(queueName)
+	if queue == nil || err != nil {
+		commonError = errors.New("Could not find queue " + queueName + " in service bus " + s.Namespace.Name)
+		logger.LogHighlight("Could not find queue %v in service bus %v", log.Error, queueName, s.Namespace.Name)
+		return commonError
+	}
+	sbMessages := make([]*servicebus.Message, 0)
+	for _, msg := range messages {
+		sbMessage, err := msg.ToServiceBus()
+
+		if err != nil {
+			logger.Error(err.Error())
+			return err
+		}
+		sbMessages = append(sbMessages, sbMessage)
+	}
+
+	if err != nil {
+		logger.Error(err.Error())
+		return err
+	}
+
+	err = queue.SendBatch(ctx, servicebus.NewMessageBatchIterator(10485760, sbMessages...))
+
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	logger.LogHighlight("Service bus bulk queue messages were sent successfully to %v queue in service bus %v", log.Info, queueName, s.Namespace.Name)
+	return nil
+}
+
 // SendQueueServiceBusMessage Sends a Service Bus Message to a Queue
 func (s *ServiceBusCli) SendQueueServiceBusMessage(queueName string, sbMessage *servicebus.Message) error {
 	var commonError error
