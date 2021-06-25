@@ -1,2 +1,2 @@
 namespace: "default"
-serviceBusConnectionString:
+serviceBusConnectionString: ""

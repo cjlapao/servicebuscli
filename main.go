@@ -26,6 +26,7 @@ func main() {
 	ver.Name = "Service Bus Tool"
 	ver.Author = "Carlos Lapao"
 	ver.License = "MIT"
+	ver.Minor = 2
 	ver.Rev = 1
 	ver.PrintHeader()
 

@@ -107,7 +107,8 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.HandleFunc("/topics/{topicName}", controller.GetTopic).Methods("GET")
 	controller.Router.HandleFunc("/topics/{topicName}", controller.DeleteTopic).Methods("DELETE")
 	controller.Router.HandleFunc("/topics/{topicName}/send", controller.SendTopicMessage).Methods("PUT")
-	controller.Router.HandleFunc("/topics/{topicName}/bulksend", controller.SendBulkTopicMessage).Methods("PUT")
+	controller.Router.HandleFunc("/topics/{topicName}/sendbulk", controller.SendBulkTopicMessage).Methods("PUT")
+	controller.Router.HandleFunc("/topics/{topicName}/sendbulktemplate", controller.SendBulkTemplateTopicMessage).Methods("PUT")
 	// Subscriptions Controllers
 	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.GetTopicSubscriptions).Methods("GET")
 	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.UpsertTopicSubscription).Methods("POST")
@@ -127,7 +128,8 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.HandleFunc("/queues/{queueName}", controller.GetQueue).Methods("GET")
 	controller.Router.HandleFunc("/queues/{queueName}", controller.DeleteQueue).Methods("DELETE")
 	controller.Router.HandleFunc("/queues/{queueName}/send", controller.SendQueueMessage).Methods("PUT")
-	controller.Router.HandleFunc("/queues/{queueName}/bulksend", controller.SendBulkQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc("/queues/{queueName}/sendbulk", controller.SendBulkQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc("/queues/{queueName}/sendbulktemplate", controller.SendBulkTemplateQueueMessage).Methods("PUT")
 	controller.Router.HandleFunc("/queues/{queueName}/deadletters", controller.GetQueueDeadLetterMessages).Methods("GET")
 	controller.Router.HandleFunc("/queues/{queueName}/messages", controller.GetQueueMessages).Methods("GET")
 

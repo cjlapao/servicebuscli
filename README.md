@@ -13,6 +13,8 @@
     - [[GET] /topics/{topic_name}](#get-topicstopic_name)
     - [[DELETE] /topics/{topic_name}](#delete-topicstopic_name)
     - [[PUT] /topics/{topic_name}/send](#put-topicstopic_namesend)
+    - [[PUT] /topics/{topic_name}/sendbulk](#put-topicstopic_namesendbulk)
+    - [[PUT] /topics/{topic_name}/sendbulktemplate](#put-topicstopic_namesendbulktemplate)
     - [[GET] /topics/{topic_name}/subscriptions](#get-topicstopic_namesubscriptions)
     - [[POST] /topics/{topic_name}/subscriptions](#post-topicstopic_namesubscriptions)
     - [[GET] /topics/{topic_name}/{subscription_name}](#get-topicstopic_namesubscription_name)
@@ -28,6 +30,8 @@
     - [[GET] /queues/{queue_name}](#get-queuesqueue_name)
     - [[DELETE] /queues/{queue_name}](#delete-queuesqueue_name)
     - [[PUT] /queues/{queue_name}/send](#put-queuesqueue_namesend)
+    - [[PUT] /topics/{queue_name}/sendbulk](#put-topicsqueue_namesendbulk)
+    - [[PUT] /topics/{queue_name}/sendbulktemplate](#put-topicsqueue_namesendbulktemplate)
     - [[GET] /queues/{queue_name}/deadletters](#get-queuesqueue_namedeadletters)
     - [[GET] /queues/{queue_name}/messages](#get-queuesqueue_namemessages)
   - [Topics](#topics)
@@ -119,6 +123,69 @@ Example Payload:
     },
     "userProperties": {
         "name": "test message"
+    }
+}
+```
+
+### [PUT] /topics/{topic_name}/sendbulk
+
+Sends bulk messages to the specific topic
+
+Example Payload:
+
+```json
+{
+     "messages": [
+         {
+            "label": "example",
+            "correlationId": "test",
+            "contentType": "application/json",
+            "data": {
+                "key": "value1"
+            },
+            "userProperties": {
+                "name": "test message1"
+            }
+         },
+         {
+            "label": "example",
+            "correlationId": "test",
+            "contentType": "application/json",
+            "data": {
+                "key": "value2"
+            },
+            "userProperties": {
+                "name": "test message2"
+            }
+         }
+     ]
+}
+```
+
+### [PUT] /topics/{topic_name}/sendbulktemplate
+
+Sends a templated bulk messages to the specific topic, it can set a wait time between batches  
+You can define in how many batches you want to send the amount of message and a wait time between each batches.  
+
+**Attention**: if the volume of messages is big, the messages will be split in batches automatically, this also happens if the batch is too small for the maximum allowed size of a payload
+
+Example Payload:
+
+```json
+{
+    "totalMessages": 50, // Number of total messages to send, if not defined it will be set to 1
+    "batchOf": 5, // send the total message in how many batches, if not defined it will be set to 1
+    "waitBetweenBatchesInMilli": 500, // wait between any batches, if not defined it will be 0
+    "template": { // Message template
+        "label": "example",
+        "correlationId": "test",
+        "contentType": "application/json",
+        "data": {
+            "key": "value2"
+        },
+        "userProperties": {
+            "name": "test message2"
+        }
     }
 }
 ```
@@ -274,6 +341,69 @@ Example Payload:
     },
     "userProperties": {
         "name": "test message"
+    }
+}
+```
+
+### [PUT] /topics/{queue_name}/sendbulk
+
+Sends bulk messages to the specific queue
+
+Example Payload:
+
+```json
+{
+     "messages": [
+         {
+            "label": "example",
+            "correlationId": "test",
+            "contentType": "application/json",
+            "data": {
+                "key": "value1"
+            },
+            "userProperties": {
+                "name": "test message1"
+            }
+         },
+         {
+            "label": "example",
+            "correlationId": "test",
+            "contentType": "application/json",
+            "data": {
+                "key": "value2"
+            },
+            "userProperties": {
+                "name": "test message2"
+            }
+         }
+     ]
+}
+```
+
+### [PUT] /topics/{queue_name}/sendbulktemplate
+
+Sends a templated bulk messages to the specific queue, it can set a wait time between batches  
+You can define in how many batches you want to send the amount of message and a wait time between each batches.  
+
+**Attention**: if the volume of messages is big, the messages will be split in batches automatically, this also happens if the batch is too small for the maximum allowed size of a payload
+
+Example Payload:
+
+```json
+{
+    "totalMessages": 50, // Number of total messages to send, if not defined it will be set to 1
+    "batchOf": 5, // send the total message in how many batches, if not defined it will be set to 1
+    "waitBetweenBatchesInMilli": 500, // wait between any batches, if not defined it will be 0
+    "template": { // Message template
+        "label": "example",
+        "correlationId": "test",
+        "contentType": "application/json",
+        "data": {
+            "key": "value2"
+        },
+        "userProperties": {
+            "name": "test message2"
+        }
     }
 }
 ```

@@ -243,6 +243,11 @@ func (s *ServiceBusCli) SendQueueMessage(queueName string, message entities.Mess
 	return nil
 }
 
+func (s *ServiceBusCli) SendParallelBulkQueueMessage(wg *sync.WaitGroup, queueName string, messages ...entities.MessageRequest) {
+	defer wg.Done()
+	_ = s.SendBulkQueueMessage(queueName, messages...)
+}
+
 // SendQueueMessage Sends a Service Bus Message to a Queue
 func (s *ServiceBusCli) SendBulkQueueMessage(queueName string, messages ...entities.MessageRequest) error {
 	var commonError error
@@ -278,7 +283,7 @@ func (s *ServiceBusCli) SendBulkQueueMessage(queueName string, messages ...entit
 		return err
 	}
 
-	err = queue.SendBatch(ctx, servicebus.NewMessageBatchIterator(10485760, sbMessages...))
+	err = queue.SendBatch(ctx, servicebus.NewMessageBatchIterator(262144, sbMessages...))
 
 	if err != nil {
 		logger.Error(err.Error())

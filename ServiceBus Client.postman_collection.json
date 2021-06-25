@@ -1565,7 +1565,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value1\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message1\"\r\n    }\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1691,7 +1691,7 @@
 					]
 				},
 				{
-					"name": "Send Topic Bulk Messages",
+					"name": "Send Bulk Topic Messages",
 					"request": {
 						"method": "PUT",
 						"header": [],
@@ -1705,7 +1705,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/bulksend",
+							"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/sendbulk",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{url}}"
@@ -1713,7 +1713,7 @@
 							"path": [
 								"topics",
 								"{{topicName}}",
-								"bulksend"
+								"sendbulk"
 							]
 						}
 					},
@@ -1768,6 +1768,138 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"message\": \"Message example was sent successfully to foo queue\",\n    \"data\": {\n        \"key\": \"value\"\n    }\n}"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "120"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Send Bulk Template Topic Message",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"totalMessages\": 10,\r\n    \"WaitBetweenBatchesInMilli\":10,\r\n    \"batchOf\": 5,\r\n    \"template\": {\r\n        \"label\": \"example\",\r\n        \"correlationId\": \"test\",\r\n        \"contentType\": \"application/json\",\r\n        \"data\": {\r\n                \"key\": \"value1\"\r\n        },\r\n        \"userProperties\": {\r\n            \"name\": \"test message1\"\r\n        }\r\n    }\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{url}}/topics/{{topicName}}/sendbulktemplate",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"topics",
+								"{{topicName}}",
+								"sendbulktemplate"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:19:17 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "88"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Sent 10 Messages in 5 batches successfully to temp-aaa-gmt topic\"\n}"
 						},
 						{
 							"name": "Error Result",
@@ -2431,7 +2563,7 @@
 					]
 				},
 				{
-					"name": "Send Queue Bulk Messages",
+					"name": "Send Bulk Queue Messages",
 					"request": {
 						"method": "PUT",
 						"header": [],
@@ -2445,7 +2577,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/bulksend",
+							"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/sendbulk",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{url}}"
@@ -2453,11 +2585,246 @@
 							"path": [
 								"queues",
 								"{{queueName}}",
-								"bulksend"
+								"sendbulk"
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:19:17 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "88"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Message example was sent successfully to foo queue\",\n    \"data\": {\n        \"key\": \"value\"\n    }\n}"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "120"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Send Bulk Template Topic Message Copy",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"totalMessages\": 10,\r\n    \"WaitBetweenBatchesInMilli\":10,\r\n    \"batchOf\": 5,\r\n    \"template\": {\r\n        \"label\": \"example\",\r\n        \"correlationId\": \"test\",\r\n        \"contentType\": \"application/json\",\r\n        \"data\": {\r\n                \"key\": \"value1\"\r\n        },\r\n        \"userProperties\": {\r\n            \"name\": \"test message1\"\r\n        }\r\n    }\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/sendbulktemplate",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"queues",
+								"{{queueName}}",
+								"sendbulktemplate"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Ok Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\"\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:19:17 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "88"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Sent 10 Messages in 5 batches successfully to temp-aaa-gmt topic\"\n}"
+						},
+						{
+							"name": "Error Result",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"label\": \"example\",\r\n    \"correlationId\": \"test\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"key\": \"value\",\r\n    },\r\n    \"userProperties\": {\r\n        \"name\": \"test message\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{protocol}}://{{url}}/queues/{{queueName}}/send",
+									"protocol": "{{protocol}}",
+									"host": [
+										"{{url}}"
+									],
+									"path": [
+										"queues",
+										"{{queueName}}",
+										"send"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 29 Apr 2021 15:20:00 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "120"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Get Queue Messages",
@@ -2744,7 +3111,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"label\": \"Dsl.RecognitionProgramChangeEvent\",\r\n    \"correlationId\": \"d7c963a2923242eb9b609aa8296f4a4d\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"Title\": \"\",\r\n        \"Version\": \"4.5.6\",\r\n        \"TenantId\": \"00000000-1111-1111-200d-03a37c5709ba\",\r\n        \"ChangeType\": 2\r\n    },\r\n    \"userProperties\": {\r\n        \"X-MsgTypeVersion\": \"1.0\",\r\n        \"X-MsgDomain\": \"Dsl\",\r\n        \"X-MsgName\": \"RecognitionProgramChangeEvent\",\r\n        \"X-Sender\": \"GlobalOutboxSender\",\r\n        \"X-TenantId\": \"00000000-1111-1111-200d-03a37c5709ba\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"label\": \"Dsl.RecognitionProgramChangeEvent\",\r\n    \"correlationId\": \"d7c963a2923242eb9b609aa8296f4a4d\",\r\n    \"contentType\": \"application/json\",\r\n    \"data\": {\r\n        \"Title\": \"Software program for Integration Test\",\r\n        \"Version\": \"4.5.6\",\r\n        \"TenantId\": \"11111111-1111-1111-1111-555555550001\",\r\n        \"ChangeType\": 2\r\n    },\r\n    \"userProperties\": {\r\n        \"X-MsgTypeVersion\": \"1.0\",\r\n        \"X-MsgDomain\": \"Dsl\",\r\n        \"X-MsgName\": \"RecognitionProgramChangeEvent\",\r\n        \"X-Sender\": \"GlobalOutboxSender\",\r\n        \"X-TenantId\": \"11111111-1111-1111-1111-555555550001\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2876,7 +3243,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"messages\": [\r\n        {\r\n            \"label\": \"Dsl.RecognitionProgramChangeEvent\",\r\n            \"correlationId\": \"d7c963a2923242eb9b609aa8296f4a4d\",\r\n            \"contentType\": \"application/json\",\r\n            \"data\": {\r\n                \"Title\": \"\",\r\n                \"Version\": \"4.5.6\",\r\n                \"TenantId\": \"00000000-1111-1111-200d-03a37c5709ba\",\r\n                \"ChangeType\": 2\r\n            },\r\n            \"userProperties\": {\r\n                \"X-MsgTypeVersion\": \"1.0\",\r\n                \"X-MsgDomain\": \"Dsl\",\r\n                \"X-MsgName\": \"RecognitionProgramChangeEvent\",\r\n                \"X-Sender\": \"GlobalOutboxSender\",\r\n                \"X-TenantId\": \"00000000-1111-1111-200d-03a37c5709ba\"\r\n            }\r\n        },\r\n        {\r\n            \"label\": \"Dsl.RecognitionProgramChangeEvent\",\r\n            \"correlationId\": \"d7c963a2923242eb9b609aa8296f4a4d\",\r\n            \"contentType\": \"application/json\",\r\n            \"data\": {\r\n                \"Title\": \"\",\r\n                \"Version\": \"4.5.6\",\r\n                \"TenantId\": \"00000000-1111-1111-200d-03a37c5709ba\",\r\n                \"ChangeType\": 2\r\n            },\r\n            \"userProperties\": {\r\n                \"X-MsgTypeVersion\": \"1.0\",\r\n                \"X-MsgDomain\": \"Dsl\",\r\n                \"X-MsgName\": \"RecognitionProgramChangeEvent\",\r\n                \"X-Sender\": \"GlobalOutboxSender\",\r\n                \"X-TenantId\": \"00000000-1111-1111-200d-03a37c5709ba\"\r\n            }\r\n        }\r\n    ]\r\n}",
+							"raw": "{\r\n    \"messages\": [\r\n        {\r\n            \"label\": \"Dsl.RecognitionProgramChangeEvent\",\r\n            \"correlationId\": \"d7c963a2923242eb9b609aa8296f4a4d\",\r\n            \"contentType\": \"application/json\",\r\n            \"data\": {\r\n                \"Title\": \"Software program for Integration Test\",\r\n                \"Version\": \"4.5.6\",\r\n                \"TenantId\": \"11111111-1111-1111-1111-555555550001\",\r\n                \"ChangeType\": 0\r\n            },\r\n            \"userProperties\": {\r\n                \"X-MsgTypeVersion\": \"1.0\",\r\n                \"X-MsgDomain\": \"Dsl\",\r\n                \"X-MsgName\": \"RecognitionProgramChangeEvent\",\r\n                \"X-Sender\": \"GlobalOutboxSender\",\r\n                \"X-TenantId\": \"11111111-1111-1111-1111-555555550001\"\r\n            }\r\n        },\r\n        {\r\n            \"label\": \"Dsl.RecognitionProgramChangeEvent\",\r\n            \"correlationId\": \"d7c963a2923242eb9b609aa8296f4a4d\",\r\n            \"contentType\": \"application/json\",\r\n            \"data\": {\r\n                \"Title\": \"Software program for Integration Test\",\r\n                \"Version\": \"4.5.6\",\r\n                \"TenantId\": \"11111111-1111-1111-1111-555555550001\",\r\n                \"ChangeType\": 0\r\n            },\r\n            \"userProperties\": {\r\n                \"X-MsgTypeVersion\": \"1.0\",\r\n                \"X-MsgDomain\": \"Dsl\",\r\n                \"X-MsgName\": \"RecognitionProgramChangeEvent\",\r\n                \"X-Sender\": \"GlobalOutboxSender\",\r\n                \"X-TenantId\": \"11111111-1111-1111-1111-555555550001\"\r\n            }\r\n        }\r\n    ]\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2884,7 +3251,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{protocol}}://{{url}}/topics/aaa-gmt/bulksend",
+							"raw": "{{protocol}}://{{url}}/topics/aaa-gmt/sendbulk",
 							"protocol": "{{protocol}}",
 							"host": [
 								"{{url}}"
@@ -2892,7 +3259,7 @@
 							"path": [
 								"topics",
 								"aaa-gmt",
-								"bulksend"
+								"sendbulk"
 							]
 						}
 					},
@@ -3000,6 +3367,35 @@
 							"body": "{\n    \"code\": 400,\n    \"error\": \"Some Error\",\n    \"message\": \"Some Error Message\"\n}"
 						}
 					]
+				},
+				{
+					"name": "Send Bulk RecognitionProgramChangeEvent (500 Messages)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"totalMessages\": 10,\r\n    \"WaitBetweenBatchesInMilli\":10,\r\n    \"batchOf\": 5,\r\n    \"template\": {\r\n        \"label\": \"Dsl.RecognitionProgramChangeEvent\",\r\n        \"correlationId\": \"d7c963a2923242eb9b609aa8296f4a4d\",\r\n        \"contentType\": \"application/json\",\r\n        \"data\": {\r\n            \"Title\": \"Software program for Integration Test\",\r\n            \"Version\": \"4.5.6\",\r\n            \"TenantId\": \"11111111-1111-1111-1111-555555550001\",\r\n            \"ChangeType\": 0\r\n        },\r\n        \"userProperties\": {\r\n            \"X-MsgTypeVersion\": \"1.0\",\r\n            \"X-MsgDomain\": \"Dsl\",\r\n            \"X-MsgName\": \"RecognitionProgramChangeEvent\",\r\n            \"X-Sender\": \"GlobalOutboxSender\",\r\n            \"X-TenantId\": \"11111111-1111-1111-1111-555555550001\"\r\n        }\r\n    }\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{url}}/topics/aaa-gmt/sendbulktemplate",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"topics",
+								"aaa-gmt",
+								"sendbulktemplate"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},

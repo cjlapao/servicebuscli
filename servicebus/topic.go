@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"sync"
 	"time"
 
 	servicebus "github.com/Azure/azure-service-bus-go"
@@ -127,6 +128,11 @@ func (s *ServiceBusCli) SendTopicMessage(topicName string, message entities.Mess
 	return nil
 }
 
+func (s *ServiceBusCli) SendParallelBulkTopicMessage(wg *sync.WaitGroup, topicName string, messages ...entities.MessageRequest) {
+	defer wg.Done()
+	_ = s.SendBulkTopicMessage(topicName, messages...)
+}
+
 func (s *ServiceBusCli) SendBulkTopicMessage(topicName string, messages ...entities.MessageRequest) error {
 	var commonError error
 	logger.LogHighlight("Sending a service bus topic messages to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
@@ -157,7 +163,7 @@ func (s *ServiceBusCli) SendBulkTopicMessage(topicName string, messages ...entit
 		sbMessages = append(sbMessages, sbMessage)
 	}
 
-	err := topic.SendBatch(ctx, servicebus.NewMessageBatchIterator(10485760, sbMessages...))
+	err := topic.SendBatch(ctx, servicebus.NewMessageBatchIterator(262144, sbMessages...))
 
 	if err != nil {
 		logger.Error(err.Error())
