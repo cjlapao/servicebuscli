@@ -5,12 +5,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/cjlapao/servicebuscli-go/entities"
 	"github.com/gorilla/mux"
 )
 
-// GetTopicSubscriptions Gets All the subscriptions in a topic
+// GetTopicSubscriptions Gets all of the subscriptions from a topic in the current namespace
 func (c *Controller) GetTopicSubscriptions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -45,17 +46,18 @@ func (c *Controller) GetTopicSubscriptions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	subscriptions := make([]entities.SubscriptionResponseEntity, 0)
+	subscriptions := make([]entities.SubscriptionResponse, 0)
 	for _, azSubscription := range azTopicSubscriptions {
-		result := entities.SubscriptionResponseEntity{}
+		result := entities.SubscriptionResponse{}
 		result.FromServiceBus(azSubscription)
 		subscriptions = append(subscriptions, result)
 	}
 
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(subscriptions)
 }
 
-// GetTopicSubscription Gets a subscription from a topic in the namespace
+// GetTopicSubscription Gets the details of a subscription from a topic in the current namespace
 func (c *Controller) GetTopicSubscription(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -102,12 +104,12 @@ func (c *Controller) GetTopicSubscription(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	apiSubscription := entities.SubscriptionResponseEntity{}
+	apiSubscription := entities.SubscriptionResponse{}
 	apiSubscription.FromServiceBus(azSubscription)
 	json.NewEncoder(w).Encode(apiSubscription)
 }
 
-// UpsertTopicSubscription Creates a subscription in a topic
+// UpsertTopicSubscription Update or Insert a subscription in a topic in the current namespace
 func (c *Controller) UpsertTopicSubscription(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	vars := mux.Vars(r)
@@ -116,16 +118,6 @@ func (c *Controller) UpsertTopicSubscription(w http.ResponseWriter, r *http.Requ
 	upsert := false
 	if r.Method == "PUT" {
 		upsert = true
-	}
-
-	// Checking for null parameters
-	if topicName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
-		json.NewEncoder(w).Encode(errorResponse)
-		return
 	}
 
 	// Body cannot be null error
@@ -138,8 +130,18 @@ func (c *Controller) UpsertTopicSubscription(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	bodySubscription := entities.SubscriptionRequestEntity{}
-	err = json.Unmarshal(reqBody, &bodySubscription)
+	// Checking for null parameters
+	if topicName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Topic name is null"
+		errorResponse.Message = "Topic name cannot be null"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	subscriptionRequest := entities.SubscriptionRequest{}
+	err = json.Unmarshal(reqBody, &subscriptionRequest)
 
 	// Body deserialization error
 	if err != nil {
@@ -151,8 +153,8 @@ func (c *Controller) UpsertTopicSubscription(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	bodySubscription.TopicName = topicName
-	isValid, validError := bodySubscription.ValidateSubscriptionRequest()
+	subscriptionRequest.TopicName = topicName
+	isValid, validError := subscriptionRequest.IsValid()
 	if !isValid {
 		if validError != nil {
 			w.WriteHeader(int(validError.Code))
@@ -163,30 +165,20 @@ func (c *Controller) UpsertTopicSubscription(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	_, errResp := bodySubscription.GetOptions()
-
-	if errResp != nil {
-		w.WriteHeader(int(errResp.Code))
-		json.NewEncoder(w).Encode(errResp)
-		return
-
-	}
-
 	if !upsert {
-		subscriptionExists, _ := sbcli.GetSubscription(bodySubscription.TopicName, bodySubscription.Name)
+		subscriptionExists, _ := sbcli.GetSubscription(subscriptionRequest.TopicName, subscriptionRequest.Name)
 
 		if subscriptionExists != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			found := entities.ApiSuccessResponse{
-				Message: "The Subscription " + bodySubscription.Name + " already exists in topic " + bodySubscription.TopicName + ", ignoring",
+				Message: "The Subscription " + subscriptionRequest.Name + " already exists in topic " + subscriptionRequest.TopicName + " in " + sbcli.Namespace.Name + ", ignoring",
 			}
 			json.NewEncoder(w).Encode(found)
 			return
 		}
-
 	}
 
-	err = sbcli.CreateSubscription(bodySubscription, upsert)
+	err = sbcli.CreateSubscription(subscriptionRequest, upsert)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -197,22 +189,23 @@ func (c *Controller) UpsertTopicSubscription(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	subscriptionE := entities.SubscriptionResponseEntity{}
-	createdSubscription, err := sbcli.GetSubscription(bodySubscription.TopicName, bodySubscription.Name)
+	createdSubscription, err := sbcli.GetSubscription(subscriptionRequest.TopicName, subscriptionRequest.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
 		errorResponse.Error = "Error Creating Subscription"
-		errorResponse.Message = "There was an error creating subscription"
+		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
-	subscriptionE.FromServiceBus(createdSubscription)
+
+	response := entities.SubscriptionResponse{}
+	response.FromServiceBus(createdSubscription)
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(subscriptionE)
+	json.NewEncoder(w).Encode(response)
 }
 
-// DeleteTopicSubscription Deletes subscription from a topic in the namespace
+// DeleteTopicSubscription Deletes subscription from a topic in the current namespace
 func (c *Controller) DeleteTopicSubscription(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -248,11 +241,20 @@ func (c *Controller) DeleteTopicSubscription(w http.ResponseWriter, r *http.Requ
 	}
 
 	sbSubscription, err := sbcli.GetSubscription(topicName, subscriptionName)
-	if err != nil {
+	if sbSubscription == nil && strings.Contains(err.Error(), "not found") {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "Topic not found"
+		errorResponse.Error = "Subscription not found"
 		errorResponse.Message = "The Subscription " + subscriptionName + " was not found on topic " + topicName + " in the service bus " + sbcli.Namespace.Name
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	if sbSubscription == nil && err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Server Error"
+		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
@@ -261,19 +263,16 @@ func (c *Controller) DeleteTopicSubscription(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "Error Deleting Subscription"
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	response := entities.SubscriptionResponseEntity{}
-	response.FromServiceBus(sbSubscription)
 	w.WriteHeader(http.StatusAccepted)
-	json.NewEncoder(w).Encode(response)
 }
 
-// GetSubscriptionMessages Gets messages from a topic subscription
+// GetSubscriptionMessages Gets messages from a subscription in a topic in the current namespace
 func (c *Controller) GetSubscriptionMessages(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -311,8 +310,8 @@ func (c *Controller) GetSubscriptionMessages(w http.ResponseWriter, r *http.Requ
 	if subscriptionName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
+		errorResponse.Error = "Subscription name is null"
+		errorResponse.Message = "Subscription name cannot be null"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
@@ -323,7 +322,7 @@ func (c *Controller) GetSubscriptionMessages(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Failed Message Data Deserialization"
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
@@ -333,9 +332,9 @@ func (c *Controller) GetSubscriptionMessages(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusNoContent)
 		return
 	} else {
-		response := make([]entities.ServiceBusMessageRequest, 0)
+		response := make([]entities.MessageResponse, 0)
 		for _, msg := range result {
-			entityMsg := entities.ServiceBusMessageRequest{}
+			entityMsg := entities.MessageResponse{}
 			entityMsg.FromServiceBus(&msg)
 			response = append(response, entityMsg)
 		}
@@ -345,7 +344,7 @@ func (c *Controller) GetSubscriptionMessages(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// GetSubscriptionMessages Gets messages from a topic subscription
+// GetSubscriptionMessages Gets dead letters from a subscription in a topic in the current namespace
 func (c *Controller) GetSubscriptionDeadLetterMessages(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicName := vars["topicName"]
@@ -383,8 +382,8 @@ func (c *Controller) GetSubscriptionDeadLetterMessages(w http.ResponseWriter, r 
 	if subscriptionName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
+		errorResponse.Error = "Subscription name is null"
+		errorResponse.Message = "Subscription name cannot be null"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
@@ -395,7 +394,7 @@ func (c *Controller) GetSubscriptionDeadLetterMessages(w http.ResponseWriter, r 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Failed Message Data Deserialization"
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
@@ -405,9 +404,9 @@ func (c *Controller) GetSubscriptionDeadLetterMessages(w http.ResponseWriter, r 
 		w.WriteHeader(http.StatusNoContent)
 		return
 	} else {
-		response := make([]entities.ServiceBusMessageRequest, 0)
+		response := make([]entities.MessageRequest, 0)
 		for _, msg := range result {
-			entityMsg := entities.ServiceBusMessageRequest{}
+			entityMsg := entities.MessageRequest{}
 			entityMsg.FromServiceBus(&msg)
 			response = append(response, entityMsg)
 		}
@@ -438,19 +437,18 @@ func (c *Controller) GetSubscriptionRules(w http.ResponseWriter, r *http.Request
 	if subscriptionName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
+		errorResponse.Error = "Subscription name is null"
+		errorResponse.Message = "Subscription name cannot be null"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	result, err := sbcli.GetSubscriptionRules(topicName, subscriptionName)
 
-	// Body deserialization error
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Failed to GET Subscription Rules"
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
@@ -460,9 +458,9 @@ func (c *Controller) GetSubscriptionRules(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusNoContent)
 		return
 	} else {
-		response := make([]entities.RuleResponseEntity, 0)
+		response := make([]entities.RuleResponse, 0)
 		for _, msg := range result {
-			entityMsg := entities.RuleResponseEntity{}
+			entityMsg := entities.RuleResponse{}
 			entityMsg.FromServiceBus(msg)
 			response = append(response, entityMsg)
 		}
@@ -494,13 +492,13 @@ func (c *Controller) GetSubscriptionRule(w http.ResponseWriter, r *http.Request)
 	if subscriptionName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
+		errorResponse.Error = "Subscription name is null"
+		errorResponse.Message = "Subscription name cannot be null"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	// Subscription Name cannot be nil
+	// Rule Name cannot be nil
 	if ruleName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
@@ -512,23 +510,31 @@ func (c *Controller) GetSubscriptionRule(w http.ResponseWriter, r *http.Request)
 
 	result, err := sbcli.GetSubscriptionRule(topicName, subscriptionName, ruleName)
 
-	// Body deserialization error
-	if err != nil {
+	if result == nil && strings.Contains(err.Error(), "was found") {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "Failed to GET Subscription Rule " + ruleName
+		errorResponse.Error = "Rule Not Found"
+		errorResponse.Message = "Rule with name " + ruleName + " was not found in subscription " + subscriptionName + " in topic " + topicName + " in " + sbcli.Namespace.Name
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	if result == nil && err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	response := entities.RuleResponseEntity{}
+	response := entities.RuleResponse{}
 	response.FromServiceBus(result)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetSubscriptionMessages Gets messages from a topic subscription
+// CreateSubscriptionRule Creates a rule in a subscription
 func (c *Controller) CreateSubscriptionRule(w http.ResponseWriter, r *http.Request) {
 	errorResponse := entities.ApiErrorResponse{}
 	vars := mux.Vars(r)
@@ -546,7 +552,7 @@ func (c *Controller) CreateSubscriptionRule(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	ruleRequest := entities.RuleRequestEntity{}
+	ruleRequest := entities.RuleRequest{}
 	err = json.Unmarshal(reqBody, &ruleRequest)
 
 	// Body deserialization error
@@ -573,34 +579,44 @@ func (c *Controller) CreateSubscriptionRule(w http.ResponseWriter, r *http.Reque
 	if subscriptionName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
+		errorResponse.Error = "Subscription name is null"
+		errorResponse.Message = "Subscription name cannot be null"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	_, err = sbcli.GetSubscription(topicName, subscriptionName)
 
-	// Body deserialization error
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "Failed to GET Subscription " + subscriptionName
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	subscription := entities.SubscriptionRequestEntity{}
+	subscription := entities.SubscriptionRequest{}
 	subscription.TopicName = topicName
 	subscription.Name = subscriptionName
 
+	ruleExists, _ := sbcli.GetSubscriptionRule(topicName, subscriptionName, ruleRequest.Name)
+	if ruleExists != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		found := entities.ApiErrorResponse{
+			Code:    http.StatusBadRequest,
+			Error:   "Failed to CREATE Subscription Rule" + ruleRequest.Name,
+			Message: "The Rule " + ruleRequest.Name + " already exists in " + subscriptionName + " subscription, ignoring",
+		}
+		json.NewEncoder(w).Encode(found)
+		return
+	}
+
 	err = sbcli.CreateSubscriptionRule(subscription, ruleRequest)
 
-	// Body deserialization error
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		errorResponse.Code = http.StatusNotFound
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
 		errorResponse.Error = "Failed to CREATE Subscription Rule" + ruleRequest.Name
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
@@ -611,13 +627,13 @@ func (c *Controller) CreateSubscriptionRule(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
-		errorResponse.Error = "Failed to CREATE Subscription Rule" + ruleRequest.Name
+		errorResponse.Error = "Server Error"
 		errorResponse.Message = err.Error()
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	response := entities.RuleResponseEntity{}
+	response := entities.RuleResponse{}
 	response.FromServiceBus(rule)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
@@ -645,13 +661,13 @@ func (c *Controller) DeleteSubscriptionRule(w http.ResponseWriter, r *http.Reque
 	if subscriptionName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
-		errorResponse.Error = "Topic name is null"
-		errorResponse.Message = "Topic name cannot be null"
+		errorResponse.Error = "Subscription name is null"
+		errorResponse.Message = "Subscription name cannot be null"
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	// Subscription Name cannot be nil
+	// Rule Name cannot be nil
 	if ruleName == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse.Code = http.StatusBadRequest
@@ -663,8 +679,16 @@ func (c *Controller) DeleteSubscriptionRule(w http.ResponseWriter, r *http.Reque
 
 	result, err := sbcli.DeleteSubscriptionRule(topicName, subscriptionName, ruleName)
 
-	// Body deserialization error
-	if err != nil {
+	if result == nil && strings.Contains(err.Error(), "No rule was found") {
+		w.WriteHeader(http.StatusNotFound)
+		errorResponse.Code = http.StatusNotFound
+		errorResponse.Error = "Rule Not Found"
+		errorResponse.Message = "Rule with name " + ruleName + " was not found in subscription " + subscriptionName + " in topic " + topicName + " in " + sbcli.Namespace.Name
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	if result == nil && err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		errorResponse.Code = http.StatusNotFound
 		errorResponse.Error = "Failed to DELETE Subscription Rule " + ruleName
@@ -673,7 +697,5 @@ func (c *Controller) DeleteSubscriptionRule(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	response := entities.RuleResponseEntity{}
-	response.FromServiceBus(result)
 	w.WriteHeader(http.StatusAccepted)
 }

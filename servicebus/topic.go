@@ -2,13 +2,14 @@ package servicebus
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"os"
+	"sync"
 	"time"
 
 	servicebus "github.com/Azure/azure-service-bus-go"
 	"github.com/cjlapao/common-go/log"
+	"github.com/cjlapao/servicebuscli-go/entities"
 )
 
 // GetTopicManager creates a servicebus topic manager
@@ -88,7 +89,7 @@ func (s *ServiceBusCli) ListTopics() ([]*servicebus.TopicEntity, error) {
 }
 
 // SendTopicMessage sends a message to a specific topic
-func (s *ServiceBusCli) SendTopicMessage(topicName string, message map[string]interface{}, label string, userParameters map[string]interface{}) error {
+func (s *ServiceBusCli) SendTopicMessage(topicName string, message entities.MessageRequest) error {
 	var commonError error
 	logger.LogHighlight("Sending a service bus topic message to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
 	if topicName == "" {
@@ -107,31 +108,69 @@ func (s *ServiceBusCli) SendTopicMessage(topicName string, message map[string]in
 		return commonError
 	}
 
-	messageData, err := json.MarshalIndent(message, "", "  ")
+	sbMessage, err := message.ToServiceBus()
+
 	if err != nil {
 		logger.Error(err.Error())
 		return err
 	}
 
-	sbMessage := servicebus.Message{
-		Data:           messageData,
-		UserProperties: userParameters,
-	}
-
-	if label != "" {
-		sbMessage.Label = label
-	}
-
-	err = topic.Send(ctx, &sbMessage)
+	err = topic.Send(ctx, sbMessage)
 
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return err
 	}
 
 	logger.LogHighlight("Service bus topic message was sent successfully to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
-	logger.Info("Message:")
-	logger.Info(string(messageData))
+	logger.Info("Message Body:")
+	logger.Info(string(sbMessage.Data))
+	return nil
+}
+
+func (s *ServiceBusCli) SendParallelBulkTopicMessage(wg *sync.WaitGroup, topicName string, messages ...entities.MessageRequest) {
+	defer wg.Done()
+	_ = s.SendBulkTopicMessage(topicName, messages...)
+}
+
+func (s *ServiceBusCli) SendBulkTopicMessage(topicName string, messages ...entities.MessageRequest) error {
+	var commonError error
+	logger.LogHighlight("Sending a service bus topic messages to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
+	if topicName == "" {
+		commonError = errors.New("Topic cannot be null")
+		logger.Error(commonError.Error())
+		return commonError
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	topic := s.GetTopic(topicName)
+	if topic == nil {
+		commonError = errors.New("Could not find topic " + topicName + " in service bus " + s.Namespace.Name)
+		logger.LogHighlight("Could not find topic %v in service bus %v", log.Error, topicName, s.Namespace.Name)
+		return commonError
+	}
+
+	sbMessages := make([]*servicebus.Message, 0)
+	for _, msg := range messages {
+		sbMessage, err := msg.ToServiceBus()
+
+		if err != nil {
+			logger.Error(err.Error())
+			return err
+		}
+		sbMessages = append(sbMessages, sbMessage)
+	}
+
+	err := topic.SendBatch(ctx, servicebus.NewMessageBatchIterator(262144, sbMessages...))
+
+	if err != nil {
+		logger.Error(err.Error())
+		return err
+	}
+
+	logger.LogHighlight("Service bus bulk topic messages were sent successfully to %v topic in service bus %v", log.Info, topicName, s.Namespace.Name)
 	return nil
 }
 

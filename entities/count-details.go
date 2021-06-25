@@ -2,7 +2,7 @@ package entities
 
 import servicebus "github.com/Azure/azure-service-bus-go"
 
-type CountDetailsEntity struct {
+type CountDetails struct {
 	ActiveMessageCount             *int32 `json:"activeMessageCount"`
 	DeadLetterMessageCount         *int32 `json:"deadLetterMessageCount"`
 	ScheduledMessageCount          *int32 `json:"scheduledMessageCount"`
@@ -10,7 +10,7 @@ type CountDetailsEntity struct {
 	TransferMessageCount           *int32 `json:"transferMessageCount"`
 }
 
-func (c *CountDetailsEntity) FromServiceBus(countDetails *servicebus.CountDetails) {
+func (c *CountDetails) FromServiceBus(countDetails *servicebus.CountDetails) {
 	if countDetails == nil {
 		return
 	}

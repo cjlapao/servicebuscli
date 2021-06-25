@@ -6,7 +6,8 @@ import (
 	servicebus "github.com/Azure/azure-service-bus-go"
 )
 
-type ServiceBusMessageRequest struct {
+type MessageResponse struct {
+	ID             string                 `json:"id"`
 	Label          string                 `json:"label"`
 	CorrelationID  string                 `json:"correlationId"`
 	ContentType    string                 `json:"contentType"`
@@ -14,38 +15,14 @@ type ServiceBusMessageRequest struct {
 	UserProperties map[string]interface{} `json:"userProperties"`
 }
 
-func (m *ServiceBusMessageRequest) ToServiceBus() (*servicebus.Message, error) {
-	messageData, err := json.MarshalIndent(m.Data, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-
-	sbMessage := servicebus.Message{
-		Data:           messageData,
-		UserProperties: m.UserProperties,
-	}
-
-	if m.Label != "" {
-		sbMessage.Label = m.Label
-	}
-
-	if m.ContentType == "" {
-		sbMessage.ContentType = "application/json"
-	}
-
-	if m.CorrelationID != "" {
-		sbMessage.CorrelationID = m.CorrelationID
-	}
-
-	return &sbMessage, nil
-}
-
-func (m *ServiceBusMessageRequest) FromServiceBus(msg *servicebus.Message) error {
+func (m *MessageResponse) FromServiceBus(msg *servicebus.Message) error {
 	m.Data = map[string]interface{}{}
 	err := json.Unmarshal(msg.Data, &m.Data)
 	if err != nil {
 		return err
 	}
+
+	m.ID = msg.ID
 	m.UserProperties = msg.UserProperties
 
 	if msg.Label != "" {

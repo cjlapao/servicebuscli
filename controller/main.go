@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	cjlog "github.com/cjlapao/common-go/log"
 	"github.com/cjlapao/common-go/version"
+	"github.com/cjlapao/servicebuscli-go/entities"
 	"github.com/cjlapao/servicebuscli-go/servicebus"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/parser"
@@ -37,12 +39,12 @@ func handleRequests() {
 		port = "10000"
 	}
 
-	logger.Info("Starting Api Server on port " + port)
+	logger.Info("Api Server starting on port " + port + ".")
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(commonMiddleware)
 	router.HandleFunc("/", homePage)
 	_ = NewAPIController(router)
-	logger.Success("Finished Init")
+	logger.Success("API Server ready on port " + port + ".")
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }
 
@@ -78,7 +80,7 @@ func commonMiddleware(next http.Handler) http.Handler {
 
 func ServiceBusConnectionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Info("[%v] %v route...", r.Method, r.URL.Path)
+		logger.Info("[%v] %v route requested by %v.", r.Method, r.URL.Path, r.RemoteAddr)
 		if connStr == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("No Azure Service Bus Connection String defined"))
@@ -98,12 +100,15 @@ func NewAPIController(router *mux.Router) Controller {
 	controller.Router.Use(ServiceBusConnectionMiddleware)
 	controller.Router.Use(commonMiddleware)
 	// Topics Controllers
+	controller.Router.HandleFunc("/config", controller.SetConnectionString).Methods("POST")
 	controller.Router.HandleFunc("/topics", controller.GetTopics).Methods("GET")
 	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("POST")
 	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("PUT")
 	controller.Router.HandleFunc("/topics/{topicName}", controller.GetTopic).Methods("GET")
 	controller.Router.HandleFunc("/topics/{topicName}", controller.DeleteTopic).Methods("DELETE")
 	controller.Router.HandleFunc("/topics/{topicName}/send", controller.SendTopicMessage).Methods("PUT")
+	controller.Router.HandleFunc("/topics/{topicName}/sendbulk", controller.SendBulkTopicMessage).Methods("PUT")
+	controller.Router.HandleFunc("/topics/{topicName}/sendbulktemplate", controller.SendBulkTemplateTopicMessage).Methods("PUT")
 	// Subscriptions Controllers
 	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.GetTopicSubscriptions).Methods("GET")
 	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.UpsertTopicSubscription).Methods("POST")
@@ -119,11 +124,64 @@ func NewAPIController(router *mux.Router) Controller {
 	// Queues Controllers
 	controller.Router.HandleFunc("/queues", controller.GetQueues).Methods("GET")
 	controller.Router.HandleFunc("/queues", controller.UpsertQueue).Methods("POST")
+	controller.Router.HandleFunc("/queues", controller.UpsertQueue).Methods("PUT")
 	controller.Router.HandleFunc("/queues/{queueName}", controller.GetQueue).Methods("GET")
 	controller.Router.HandleFunc("/queues/{queueName}", controller.DeleteQueue).Methods("DELETE")
 	controller.Router.HandleFunc("/queues/{queueName}/send", controller.SendQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc("/queues/{queueName}/sendbulk", controller.SendBulkQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc("/queues/{queueName}/sendbulktemplate", controller.SendBulkTemplateQueueMessage).Methods("PUT")
 	controller.Router.HandleFunc("/queues/{queueName}/deadletters", controller.GetQueueDeadLetterMessages).Methods("GET")
 	controller.Router.HandleFunc("/queues/{queueName}/messages", controller.GetQueueMessages).Methods("GET")
 
 	return controller
+}
+
+// GetTopics Gets all topics in the namespace
+func (c *Controller) SetConnectionString(w http.ResponseWriter, r *http.Request) {
+	reqBody, err := ioutil.ReadAll(r.Body)
+	errorResponse := entities.ApiErrorResponse{}
+
+	// Body cannot be null error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Empty Body"
+		errorResponse.Message = "The body of the request is null or empty"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	connection := entities.ConfigRequest{}
+	err = json.Unmarshal(reqBody, &connection)
+
+	// Body deserialization error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Failed Body Deserialization"
+		errorResponse.Message = "There was an error deserializing the body of the request"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+	if connection.ConnectionString == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Empty Connection String"
+		errorResponse.Message = "Connection string cannot be empty"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+	sbcli = servicebus.NewCli(connection.ConnectionString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Error = "Error Creating Topic"
+		errorResponse.Message = "There was an error creating topic"
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	os.Setenv("SERVICEBUS_CONNECTION_STRING", connection.ConnectionString)
+	w.WriteHeader(http.StatusAccepted)
 }
