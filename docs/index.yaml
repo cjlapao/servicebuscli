@@ -9,6 +9,6 @@ entries:
     name: servicebuscli
     type: application
     urls:
-    - https://cjlapao.github.io/servicebuscli-go/servicebuscli-0.1.0.tgz
+    - servicebuscli-0.1.0.tgz
     version: 0.1.0
 generated: "2021-07-30T07:27:21.8750296+01:00"
