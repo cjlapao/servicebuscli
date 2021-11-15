@@ -1,15 +1,16 @@
+{{- if .Values.app.scaling.enabled }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: servicebuscli
-  namespace: {{ .Values.namespace }}
+  name: {{ include "servicebus-cli.fullname" .}}
+  namespace: {{ .Values.namespace.name }}
 spec:
-  maxReplicas: 5
-  minReplicas: 1
+  minReplicas: {{ .Values.app.scaling.minReplicas }}
+  maxReplicas: {{ .Values.app.scaling.maxReplicas }}
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: servicebuscli-deployment  
+    name: servicebus-cli
   metrics:
   - type: Resource
     resource:
@@ -23,3 +24,4 @@ spec:
       target:
         type: Utilization
         averageUtilization: 75
+{{- end }}

@@ -1,2 +1,43 @@
-namespace: "default"
-serviceBusConnectionString: ""
+namespace:
+  create: true
+  name: "servicebus-cli"
+
+secrets:
+  serviceBusConnectionString: ""
+
+service:
+  type: ClusterIp
+  externalName: ''
+  sessionAffinity: none
+  port: 80
+
+app:
+  serviceAccount:
+    enabled: true
+  imagePullPolicy: Always
+  port: 80
+  scaling:
+    enabled: false
+    startingReplicas: 1
+    minReplicas: 1
+    maxReplicas: 5
+  resources:
+    requests:
+      cpu: "0.05"
+      memory: "25Mi"
+    limits:
+      cpu: "0.1"
+      memory: "100Mi"
+
+ingress:
+  enabled: true
+  type: 'istio'
+  gateway: 
+    name: proxy
+    namespace: istio-system
+  hosts:
+    - host: '*'
+      paths:
+        - name: default
+          hostRoute: /api/servicebus-cli/
+          serviceRoute: /
