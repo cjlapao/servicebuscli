@@ -1,26 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: {{ .Values.namespace }}
-  name: servicebuscli 
+  namespace: {{ .Values.namespace.name }}
+  name: {{ include "servicebus-cli.fullname" .}}
   labels: 
-    app: servicebuscli
+    {{- include "servicebus-cli.labels" . | nindent 4 }}
 spec: 
-  replicas: 1
+  {{- if .Values.app.scaling.enabled }}
+  replicas: {{ .Values.app.scaling.startingReplicas }}
+  {{- end }}
   selector: 
     matchLabels:
-      app: servicebuscli
+    {{- include "servicebus-cli.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels: 
-        app: servicebuscli
+        app: servicebus-cli
     spec:
       containers: 
-      - name: servicebuscli 
+      - name: servicebus-cli 
         image: cjlapao/servicebuscli:latest
-        imagePullPolicy: Always
+        imagePullPolicy: {{ .Values.app.imagePullPolicy | quote }}
         ports:
-        - containerPort: 80
+        - containerPort: {{ .Values.app.port | quote }}
         env:
           - name: SERVICEBUS_CONNECTION_STRING
             valueFrom:
@@ -29,11 +31,11 @@ spec:
                 key: connectionString
 
           - name: SERVICEBUS_CLI_HTTP_PORT
-            value: "80"
+            value: {{ .Values.app.port | quote }}
         resources:
           requests:
-            cpu: "0.05"
-            memory: "25Mi"
+            cpu: {{ .Values.app.resources.requests.cpu | quote }}
+            memory: {{ .Values.app.resources.requests.memory | quote }}
           limits:
-            cpu: "0.1"
-            memory: "100Mi"
+            cpu: {{ .Values.app.resources.limits.cpu | quote }}
+            memory: {{ .Values.app.resources.limits.memory | quote }}
