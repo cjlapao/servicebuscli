@@ -2,5 +2,5 @@ apiVersion: v2
 name: servicebus-cli
 description: Azure Service Bus Client to easy manage all Queues/Topics/Subscriptions on a given namespace
 type: application
-version: 0.2.1
+version: 0.2.3
 appVersion: "0.2.1"
