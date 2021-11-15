@@ -3,7 +3,7 @@
 {{- if .Values.ingress.enabled }}
 {{- range $host := .Values.ingress.hosts }}
   {{- range .paths }}
-  http://{{ $host.host }}/{{ .hostRoute }}
+  http://{{ if eq $host.host "*"}}your-dns-gateway.com{{ else }}{{ $host.host }}{{ end }}{{ .hostRoute }}
   {{- end }}
 {{- end }}
 {{- end }}

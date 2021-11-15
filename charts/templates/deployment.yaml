@@ -15,19 +15,19 @@ spec:
   template:
     metadata:
       labels: 
-        app: servicebus-cli
+        {{- include "servicebus-cli.labels" . | nindent 8 }}
     spec:
       containers: 
       - name: servicebus-cli 
         image: cjlapao/servicebuscli:latest
         imagePullPolicy: {{ .Values.app.imagePullPolicy | quote }}
         ports:
-        - containerPort: {{ .Values.app.port | quote }}
+        - containerPort: {{ .Values.app.port }}
         env:
           - name: SERVICEBUS_CONNECTION_STRING
             valueFrom:
               secretKeyRef:
-                name: servicebuscli-secrets
+                name: {{ include "servicebus-cli.fullname" .}}
                 key: connectionString
 
           - name: SERVICEBUS_CLI_HTTP_PORT
