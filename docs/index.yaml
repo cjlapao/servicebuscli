@@ -3,7 +3,17 @@ entries:
   servicebus-cli:
   - apiVersion: v2
     appVersion: 0.2.1
-    created: "2021-11-15T09:05:05.4792098Z"
+    created: "2021-11-15T09:34:21.4923829Z"
+    description: Azure Service Bus Client to easy manage all Queues/Topics/Subscriptions on a given namespace
+    digest: e21df94a0a375b5e4c97d05eefa85caccbc32f536bcb26b635786ba44605640c
+    name: servicebus-cli
+    type: application
+    urls:
+    - servicebus-cli-0.2.3.tgz
+    version: 0.2.3
+  - apiVersion: v2
+    appVersion: 0.2.1
+    created: "2021-11-15T09:34:21.4913811Z"
     description: Azure Service Bus Client to easy manage all Queues/Topics/Subscriptions on a given namespace
     digest: cf34900481a85c280c65b38416aa29614d91909532b759b0ae84c5d9fabd299b
     name: servicebus-cli
@@ -11,4 +21,4 @@ entries:
     urls:
     - servicebus-cli-0.2.1.tgz
     version: 0.2.1
-generated: "2021-11-15T09:05:05.4772066Z"
+generated: "2021-11-15T09:34:21.4893815Z"
