@@ -1,0 +1,15 @@
+version: '3.4'
+
+services:
+  servicebus-cli:
+    container_name: servicebus-cli
+    image: ${DOCKER_REGISTRY-}servicebus-cli
+    build:
+      context: .
+      dockerfile: dockerfile
+    networks:
+      default:
+        aliases:
+          - servicebus-cli.dev
+    ports:
+      - "5802:80"

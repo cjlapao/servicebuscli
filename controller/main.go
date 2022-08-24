@@ -2,9 +2,11 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"net/http"
 
@@ -20,6 +22,7 @@ import (
 
 var connStr = os.Getenv("SERVICEBUS_CONNECTION_STRING")
 var port = os.Getenv("SERVICEBUS_CLI_HTTP_PORT")
+var prefix = os.Getenv("SERVICEBUS_CLI_API_PREFIX")
 var logger = cjlog.Get()
 var ver = version.Get()
 var sbcli = servicebus.NewCli(connStr)
@@ -97,41 +100,51 @@ func NewAPIController(router *mux.Router) Controller {
 		Router: router,
 	}
 
+	if prefix != "" {
+		if !strings.HasPrefix(prefix, "/") {
+			prefix = fmt.Sprintf("/%v", prefix)
+		}
+
+		if strings.HasSuffix(prefix, "/") {
+			prefix = strings.TrimSuffix(prefix, "/")
+		}
+	}
+
 	controller.Router.Use(ServiceBusConnectionMiddleware)
 	controller.Router.Use(commonMiddleware)
 	// Topics Controllers
-	controller.Router.HandleFunc("/config", controller.SetConnectionString).Methods("POST")
-	controller.Router.HandleFunc("/topics", controller.GetTopics).Methods("GET")
-	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("POST")
-	controller.Router.HandleFunc("/topics", controller.CreateTopic).Methods("PUT")
-	controller.Router.HandleFunc("/topics/{topicName}", controller.GetTopic).Methods("GET")
-	controller.Router.HandleFunc("/topics/{topicName}", controller.DeleteTopic).Methods("DELETE")
-	controller.Router.HandleFunc("/topics/{topicName}/send", controller.SendTopicMessage).Methods("PUT")
-	controller.Router.HandleFunc("/topics/{topicName}/sendbulk", controller.SendBulkTopicMessage).Methods("PUT")
-	controller.Router.HandleFunc("/topics/{topicName}/sendbulktemplate", controller.SendBulkTemplateTopicMessage).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/config", prefix), controller.SetConnectionString).Methods("POST")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics", prefix), controller.GetTopics).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics", prefix), controller.CreateTopic).Methods("POST")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics", prefix), controller.CreateTopic).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}", prefix), controller.GetTopic).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}", prefix), controller.DeleteTopic).Methods("DELETE")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/send", prefix), controller.SendTopicMessage).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/sendbulk", prefix), controller.SendBulkTopicMessage).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/sendbulktemplate", prefix), controller.SendBulkTemplateTopicMessage).Methods("PUT")
 	// Subscriptions Controllers
-	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.GetTopicSubscriptions).Methods("GET")
-	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.UpsertTopicSubscription).Methods("POST")
-	controller.Router.HandleFunc("/topics/{topicName}/subscriptions", controller.UpsertTopicSubscription).Methods("PUT")
-	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}", controller.GetTopicSubscription).Methods("GET")
-	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}", controller.DeleteTopicSubscription).Methods("DELETE")
-	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/deadletters", controller.GetSubscriptionDeadLetterMessages).Methods("GET")
-	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/messages", controller.GetSubscriptionMessages).Methods("GET")
-	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules", controller.GetSubscriptionRules).Methods("GET")
-	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules", controller.CreateSubscriptionRule).Methods("POST")
-	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules/{ruleName}", controller.GetSubscriptionRule).Methods("GET")
-	controller.Router.HandleFunc("/topics/{topicName}/{subscriptionName}/rules/{ruleName}", controller.DeleteSubscriptionRule).Methods("DELETE")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/subscriptions", prefix), controller.GetTopicSubscriptions).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/subscriptions", prefix), controller.UpsertTopicSubscription).Methods("POST")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/subscriptions", prefix), controller.UpsertTopicSubscription).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/{subscriptionName}", prefix), controller.GetTopicSubscription).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/{subscriptionName}", prefix), controller.DeleteTopicSubscription).Methods("DELETE")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/{subscriptionName}/deadletters", prefix), controller.GetSubscriptionDeadLetterMessages).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/{subscriptionName}/messages", prefix), controller.GetSubscriptionMessages).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/{subscriptionName}/rules", prefix), controller.GetSubscriptionRules).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/{subscriptionName}/rules", prefix), controller.CreateSubscriptionRule).Methods("POST")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/{subscriptionName}/rules/{ruleName}", prefix), controller.GetSubscriptionRule).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/topics/{topicName}/{subscriptionName}/rules/{ruleName}", prefix), controller.DeleteSubscriptionRule).Methods("DELETE")
 	// Queues Controllers
-	controller.Router.HandleFunc("/queues", controller.GetQueues).Methods("GET")
-	controller.Router.HandleFunc("/queues", controller.UpsertQueue).Methods("POST")
-	controller.Router.HandleFunc("/queues", controller.UpsertQueue).Methods("PUT")
-	controller.Router.HandleFunc("/queues/{queueName}", controller.GetQueue).Methods("GET")
-	controller.Router.HandleFunc("/queues/{queueName}", controller.DeleteQueue).Methods("DELETE")
-	controller.Router.HandleFunc("/queues/{queueName}/send", controller.SendQueueMessage).Methods("PUT")
-	controller.Router.HandleFunc("/queues/{queueName}/sendbulk", controller.SendBulkQueueMessage).Methods("PUT")
-	controller.Router.HandleFunc("/queues/{queueName}/sendbulktemplate", controller.SendBulkTemplateQueueMessage).Methods("PUT")
-	controller.Router.HandleFunc("/queues/{queueName}/deadletters", controller.GetQueueDeadLetterMessages).Methods("GET")
-	controller.Router.HandleFunc("/queues/{queueName}/messages", controller.GetQueueMessages).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues", prefix), controller.GetQueues).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues", prefix), controller.UpsertQueue).Methods("POST")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues", prefix), controller.UpsertQueue).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues/{queueName}", prefix), controller.GetQueue).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues/{queueName}", prefix), controller.DeleteQueue).Methods("DELETE")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues/{queueName}/send", prefix), controller.SendQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues/{queueName}/sendbulk", prefix), controller.SendBulkQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues/{queueName}/sendbulktemplate", prefix), controller.SendBulkTemplateQueueMessage).Methods("PUT")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues/{queueName}/deadletters", prefix), controller.GetQueueDeadLetterMessages).Methods("GET")
+	controller.Router.HandleFunc(fmt.Sprintf("%v/queues/{queueName}/messages", prefix), controller.GetQueueMessages).Methods("GET")
 
 	return controller
 }

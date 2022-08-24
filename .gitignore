@@ -27,3 +27,4 @@ job_*.md
 bin/
 *local*
 *personal*
+*override*
