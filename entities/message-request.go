@@ -3,10 +3,14 @@ package entities
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"regexp"
+	"strings"
 
 	servicebus "github.com/Azure/azure-service-bus-go"
 	"github.com/cjlapao/common-go/helper"
+	"github.com/google/uuid"
 )
 
 type MessageRequest struct {
@@ -21,6 +25,15 @@ func (m *MessageRequest) ToServiceBus() (*servicebus.Message, error) {
 	messageData, err := json.MarshalIndent(m.Data, "", "  ")
 	if err != nil {
 		return nil, err
+	}
+
+	hasGuid := regexp.MustCompile(`.*\$\(guid\).*`)
+	toReplace := string(messageData)
+	if hasGuid.Match(messageData) {
+		messageUUid := uuid.New()
+		toReplace = strings.ReplaceAll(toReplace, "$(guid)", messageUUid.String())
+		fmt.Printf("Message data contained a dynamic guid and it was changed to %v", messageUUid.String())
+		messageData = []byte(toReplace)
 	}
 
 	sbMessage := servicebus.Message{

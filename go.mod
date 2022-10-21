@@ -8,6 +8,7 @@ require (
 	github.com/fatih/color v1.10.0
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/gomarkdown/markdown v0.0.0-20210408062403-ad838ccf8cdd
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
