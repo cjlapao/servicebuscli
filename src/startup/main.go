@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/cjlapao/common-go/helper"
-	"github.com/cjlapao/servicebuscli-go/common"
+	"github.com/cjlapao/servicebuscli/common"
 )
 
 func Start() {

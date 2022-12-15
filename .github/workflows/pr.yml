@@ -1,0 +1,47 @@
+name: PR Builder
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Test
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      debug: false
+      run_tests: false
+      bump_version: false
+      name: servicebuscli
+  build_container:
+    name: Build Docker Container
+    uses: ./.github/workflows/build_container.yml
+    secrets: inherit
+    needs: build
+    with:
+      debug: false
+      enabled: false
+      name: servicebuscli
+      image_name: cjlapao/servicebuscli
+  publish_release:
+    name: Publish Release
+    uses: ./.github/workflows/publish_release.yml
+    secrets: inherit
+    needs: build
+    with:
+      name: servicebuscli
+      debug: false
+      enabled: false
+  publish_helm:
+    name: Publish Helm
+    uses: ./.github/workflows/publish_helm.yml
+    secrets: inherit
+    needs: 
+      - publish_release
+      - build_container
+    with:
+      debug: false
+      enabled: false
+      name: servicebuscli
+      url: servicebuscli.carloslapao.com

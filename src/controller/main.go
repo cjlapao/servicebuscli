@@ -10,8 +10,8 @@ import (
 
 	cjlog "github.com/cjlapao/common-go/log"
 	"github.com/cjlapao/common-go/version"
-	"github.com/cjlapao/servicebuscli-go/entities"
-	"github.com/cjlapao/servicebuscli-go/servicebus"
+	"github.com/cjlapao/servicebuscli/entities"
+	"github.com/cjlapao/servicebuscli/servicebus"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/parser"
 

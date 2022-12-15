@@ -1,0 +1,10 @@
+version: '3.7'
+name: servicebuscli
+services:
+  servicebuscli:
+    image: ${DOCKER_REGISTRY-}servicebuscli
+    ports:
+      - 55601:5000
+    build:
+      context: '.'
+      dockerfile: 'dockerfile'

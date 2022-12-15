@@ -1,0 +1,54 @@
+name: Publish Helm
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        required: true
+        type: string
+      debug:
+        required: false
+        type: boolean
+        default: false
+      enabled:
+        required: false
+        type: boolean
+        default: false
+      url:
+        required: true
+        type: string
+jobs:
+  publish-helm:
+    if: ${{ inputs.enabled }}
+    name: Publish Helm Chart
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'go' ]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: gh-pages
+
+    - name: Download Chart
+      uses: actions/download-artifact@v1
+      with:
+        name: helm_chart
+        path: chart_files
+
+    - name: Install Helm
+      uses: azure/setup-helm@v1
+      with:
+        version: v3.8.1
+
+    - name: Helm Package
+      run: |
+        helm package ./chart_files -d charts
+        helm repo index --url https://${{ inputs.url }}/charts ./charts
+        rm -R chart_files
+        
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "chart bumped"
+        branch: gh-pages

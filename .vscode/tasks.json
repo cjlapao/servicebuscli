@@ -1,12 +1,141 @@
 {
-  // See https://go.microsoft.com/fwlink/?LinkId=733558
-  // for the documentation about the tasks.json format
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Generate Helm Chart",
       "type": "shell",
-      "command": "helm package ./charts -d ./docs &&  helm repo index ./docs",      
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/src"
+      },
+      "problemMatcher": [],
+      "label": "build",
+      "command": "go",
+      "args": [
+        "build",
+        "-ldflags='-w -s'",
+        "-o",
+        "../bin/${input:output_name}"
+      ],
+    },
+    {
+      "type": "shell",
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "label": "build docker",
+      "command": "docker",
+      "args": [
+        "build",
+        "--tag",
+        "${input:docker_image}:${input:docker_image_tag}",
+        "."
+      ],
+    },
+    {
+      "type": "shell",
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "label": "publish docker",
+      "command": "docker",
+      "args": [
+        "push",
+        "${input:docker_image}:${input:docker_image_tag}"
+      ],
+      "dependsOn": [
+        "build docker"
+      ]
+    },
+    {
+      "type": "shell",
+      "group": "none",
+      "isBackground": false,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "label": "run container",
+      "command": "docker",
+      "args": [
+        "run",
+        "${input:docker_image}:${input:docker_image_tag}"
+      ],
+      "dependsOn": [
+        "build docker"
+      ]
+    },
+    {
+      "type": "shell",
+      "group": "build",
+      "isBackground": false,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/bin"
+      },
+      "label": "run",
+      "command": "${workspaceFolder}/bin/${input:output_name}",
+      "args": [],
+      "dependsOn": [
+        "build"
+      ]
     }
+  ],
+  "inputs": [
+    {
+      "id": "output_name",
+      "description": "Output Name:",
+      "default": "servicebuscli.exe",
+      "type": "promptString"
+    },
+    {
+      "id": "docker_image",
+      "description": "Image Name:",
+      "default": "cjlapao/go-template",
+      "type": "promptString"
+    },
+    {
+      "id": "docker_image_tag",
+      "description": "Image Tag:",
+      "default": "latest",
+      "type": "promptString"
+    },
   ]
 }

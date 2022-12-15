@@ -12,11 +12,11 @@ import (
 	"github.com/cjlapao/common-go/helper"
 	"github.com/cjlapao/common-go/log"
 	"github.com/cjlapao/common-go/version"
-	"github.com/cjlapao/servicebuscli-go/controller"
-	"github.com/cjlapao/servicebuscli-go/entities"
-	"github.com/cjlapao/servicebuscli-go/help"
-	"github.com/cjlapao/servicebuscli-go/servicebus"
-	"github.com/cjlapao/servicebuscli-go/startup"
+	"github.com/cjlapao/servicebuscli/controller"
+	"github.com/cjlapao/servicebuscli/entities"
+	"github.com/cjlapao/servicebuscli/help"
+	"github.com/cjlapao/servicebuscli/servicebus"
+	"github.com/cjlapao/servicebuscli/startup"
 )
 
 var logger = log.Get()

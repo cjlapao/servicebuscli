@@ -11,7 +11,7 @@ import (
 
 	servicebus "github.com/Azure/azure-service-bus-go"
 	"github.com/cjlapao/common-go/log"
-	"github.com/cjlapao/servicebuscli-go/entities"
+	"github.com/cjlapao/servicebuscli/entities"
 )
 
 // GetSubscription Gets a subscription from a topic in the namespace

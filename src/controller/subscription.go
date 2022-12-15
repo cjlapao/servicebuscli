@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cjlapao/servicebuscli-go/entities"
+	"github.com/cjlapao/servicebuscli/entities"
 	"github.com/gorilla/mux"
 )
 
