@@ -24,7 +24,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/golang/protobuf v1.5.0 // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/klauspost/compress v1.10.3 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
